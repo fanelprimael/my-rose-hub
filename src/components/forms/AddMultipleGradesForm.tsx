@@ -23,7 +23,7 @@ interface AddMultipleGradesFormProps {
 
 export const AddMultipleGradesForm: React.FC<AddMultipleGradesFormProps> = ({ onClose, studentId, editMode = false }) => {
   const { students } = useStudents();
-  const { addMultipleGrades, getGradesByStudent } = useGradesContext();
+  const { addMultipleGrades, updateStudentGrades, getGradesByStudent } = useGradesContext();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [formData, setFormData] = useState({
     student_id: studentId || '',
@@ -134,7 +134,13 @@ export const AddMultipleGradesForm: React.FC<AddMultipleGradesFormProps> = ({ on
         };
       }).filter(Boolean);
 
-      await addMultipleGrades(gradesToAdd as any[]);
+      // Si en mode édition, utiliser updateStudentGrades, sinon addMultipleGrades
+      if (editMode && studentId) {
+        await updateStudentGrades(studentId, formData.evaluation, formData.type, gradesToAdd as any[]);
+      } else {
+        await addMultipleGrades(gradesToAdd as any[]);
+      }
+      
       onClose();
     } catch (error) {
       console.error('Error adding grades:', error);

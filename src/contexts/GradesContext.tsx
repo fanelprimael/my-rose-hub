@@ -23,6 +23,7 @@ interface GradesContextType {
   loading: boolean;
   addGrade: (grade: Omit<Grade, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   addMultipleGrades: (grades: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
+  updateStudentGrades: (studentId: string, evaluation: string, type: string, grades: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
   updateGrade: (id: string, grade: Partial<Grade>) => Promise<void>;
   deleteGrade: (id: string) => Promise<void>;
   getGrade: (id: string) => Grade | undefined;
@@ -137,6 +138,59 @@ export const GradesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
+  const updateStudentGrades = async (studentId: string, evaluation: string, type: string, gradesData: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => {
+    try {
+      // D'abord, supprimer toutes les notes existantes pour cet élève, évaluation et type
+      const { error: deleteError } = await supabase
+        .from('grades')
+        .delete()
+        .eq('student_id', studentId)
+        .eq('evaluation', evaluation)
+        .eq('type', type);
+
+      if (deleteError) {
+        console.error('Error deleting existing grades:', deleteError);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer les anciennes notes",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Ensuite, insérer les nouvelles notes
+      if (gradesData.length > 0) {
+        const { error: insertError } = await supabase
+          .from('grades')
+          .insert(gradesData);
+
+        if (insertError) {
+          console.error('Error inserting new grades:', insertError);
+          toast({
+            title: "Erreur",
+            description: "Impossible d'ajouter les nouvelles notes",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+
+      toast({
+        title: "Succès",
+        description: "Notes mises à jour avec succès"
+      });
+      
+      await refreshGrades();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    }
+  };
+
   const updateGrade = async (id: string, gradeData: Partial<Grade>) => {
     try {
       const { error } = await supabase
@@ -221,6 +275,7 @@ export const GradesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       loading,
       addGrade,
       addMultipleGrades,
+      updateStudentGrades,
       updateGrade,
       deleteGrade,
       getGrade,

@@ -287,8 +287,6 @@ const Grades = () => {
                     <TableHead>ID Élève</TableHead>
                     <TableHead>Nom de l'élève</TableHead>
                     <TableHead>Classe</TableHead>
-                    <TableHead>Nombre de notes</TableHead>
-                    <TableHead>Moyenne</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -300,25 +298,15 @@ const Grades = () => {
                       <TableCell>
                         <Badge variant="outline">{student.class}</Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{student.gradeCount} notes</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {student.gradeCount > 0 ? (
-                          <span className={getGradeColor(student.averageGrade)}>
-                            {student.averageGrade.toFixed(1)}/20
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button variant="ghost" size="sm" onClick={() => handleViewStudent(student.id)}>
-                            <Eye className="h-4 w-4" />
+                            <Eye className="mr-2 h-4 w-4" />
+                            Voir
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleEditStudent(student.id)}>
-                            <Edit className="h-4 w-4" />
+                            <Edit className="mr-2 h-4 w-4" />
+                            Modifier
                           </Button>
                         </div>
                       </TableCell>
