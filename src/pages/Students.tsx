@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Eye, Edit, Trash2, UserPlus } from "lucide-react";
+import { Search, Filter, Eye, Edit, Trash2, UserPlus, Download } from "lucide-react";
 import { useStudentsContext } from "@/contexts/StudentsContext";
 import { AddStudentForm } from "@/components/forms/AddStudentForm";
+import { EditStudentForm } from "@/components/forms/EditStudentForm";
+import { exportToPDF, exportToCSV } from "@/utils/exportUtils";
 import { useState } from "react";
 
 const Students = () => {
   const { students, loading, deleteStudent } = useStudentsContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<any>(null);
 
   const filteredStudents = students.filter(student =>
     student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,6 +36,35 @@ const Students = () => {
     }
   };
 
+  const handleExportPDF = () => {
+    const headers = ['Nom Complet', 'Classe', 'Parent/Tuteur', 'Téléphone', 'Statut'];
+    const data = filteredStudents.map(student => ({
+      nom: `${student.first_name} ${student.last_name}`,
+      classe: student.class,
+      parent: student.parent_name,
+      telephone: student.parent_phone,
+      statut: student.status === 'active' ? 'Actif' : student.status === 'inactive' ? 'Inactif' : 'Diplômé'
+    }));
+    exportToPDF(data, 'Liste des Élèves', headers);
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Prénom', 'Nom', 'Date de naissance', 'Genre', 'Classe', 'Parent/Tuteur', 'Téléphone Parent', 'Email Parent', 'Adresse', 'Statut'];
+    const data = filteredStudents.map(student => ({
+      prenom: student.first_name,
+      nom: student.last_name,
+      date_naissance: student.date_of_birth,
+      genre: student.gender || '',
+      classe: student.class,
+      parent: student.parent_name,
+      telephone: student.parent_phone,
+      email: student.parent_email,
+      adresse: student.address,
+      statut: student.status
+    }));
+    exportToCSV(data, 'eleves', headers);
+  };
+
   if (loading) {
     return <Layout><div className="flex items-center justify-center h-64">Chargement...</div></Layout>;
   }
@@ -40,6 +72,7 @@ const Students = () => {
   return (
     <Layout>
       {showAddForm && <AddStudentForm onClose={() => setShowAddForm(false)} />}
+      {editingStudent && <EditStudentForm student={editingStudent} onClose={() => setEditingStudent(null)} />}
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -49,10 +82,16 @@ const Students = () => {
               Gérez les informations de tous les élèves de l'école
             </p>
           </div>
-          <Button onClick={() => setShowAddForm(true)} className="bg-primary hover:bg-primary/90">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Nouvel Élève
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportCSV}>
+              <Download className="mr-2 h-4 w-4" />
+              Exporter CSV
+            </Button>
+            <Button onClick={() => setShowAddForm(true)} className="bg-primary hover:bg-primary/90">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Nouvel Élève
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filter */}
@@ -68,9 +107,9 @@ const Students = () => {
                   className="pl-10"
                 />
               </div>
-              <Button variant="outline" className="shrink-0">
-                <Filter className="mr-2 h-4 w-4" />
-                Filtrer
+              <Button variant="outline" onClick={handleExportPDF}>
+                <Download className="mr-2 h-4 w-4" />
+                Exporter PDF
               </Button>
             </div>
           </CardContent>
@@ -86,8 +125,10 @@ const Students = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>ID</TableHead>
                     <TableHead>Nom Complet</TableHead>
                     <TableHead>Classe</TableHead>
+                    <TableHead>Âge</TableHead>
                     <TableHead>Parent/Tuteur</TableHead>
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Statut</TableHead>
@@ -97,11 +138,17 @@ const Students = () => {
                 <TableBody>
                   {filteredStudents.map((student) => (
                     <TableRow key={student.id} className="hover:bg-muted/50">
+                      <TableCell className="font-mono text-sm">
+                        {student.id.substring(0, 8)}
+                      </TableCell>
                       <TableCell className="font-medium">
                         {student.first_name} {student.last_name}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{student.class}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {student.age || 'N/A'} ans
                       </TableCell>
                       <TableCell>{student.parent_name}</TableCell>
                       <TableCell>{student.parent_phone}</TableCell>
@@ -111,7 +158,11 @@ const Students = () => {
                           <Button variant="ghost" size="sm">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setEditingStudent(student)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button

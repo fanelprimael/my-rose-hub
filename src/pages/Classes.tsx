@@ -3,11 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { School, Users, MapPin, Clock, Plus } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { School, Users, MapPin, Clock, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useClassesContext } from "@/contexts/ClassesContext";
+import { AddClassForm } from "@/components/forms/AddClassForm";
+import { useState } from "react";
 
 const Classes = () => {
-  const { classes } = useClassesContext();
+  const { classes, loading, deleteClass } = useClassesContext();
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const getCapacityColor = (current: number, capacity: number) => {
     const percentage = (current / capacity) * 100;
@@ -16,8 +20,13 @@ const Classes = () => {
     return "text-education-success";
   };
 
+  if (loading) {
+    return <Layout><div className="flex items-center justify-center h-64">Chargement...</div></Layout>;
+  }
+
   return (
     <Layout>
+      {showAddForm && <AddClassForm onClose={() => setShowAddForm(false)} />}
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -27,7 +36,7 @@ const Classes = () => {
               Vue d'ensemble de toutes les classes de l'école
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button onClick={() => setShowAddForm(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle Classe
           </Button>
@@ -134,6 +143,83 @@ const Classes = () => {
             );
           })}
         </div>
+
+        {/* Classes Table */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle>Liste des Classes ({classes.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Niveau</TableHead>
+                    <TableHead>Enseignant</TableHead>
+                    <TableHead>Capacité</TableHead>
+                    <TableHead>Élèves</TableHead>
+                    <TableHead>Occupation</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {classes.map((schoolClass) => {
+                    const occupancyPercentage = (schoolClass.student_count / schoolClass.capacity) * 100;
+                    
+                    return (
+                      <TableRow key={schoolClass.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">{schoolClass.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{schoolClass.level}</Badge>
+                        </TableCell>
+                        <TableCell>{schoolClass.teacher}</TableCell>
+                        <TableCell>{schoolClass.capacity}</TableCell>
+                        <TableCell>{schoolClass.student_count}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={occupancyPercentage} className="h-2 w-16" />
+                            <span className="text-sm">{Math.round(occupancyPercentage)}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-education-success/10 text-education-success hover:bg-education-success/20">
+                            Active
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteClass(schoolClass.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {classes.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Aucune classe trouvée.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
