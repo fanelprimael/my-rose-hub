@@ -11,9 +11,9 @@ import { AddGradeForm } from "@/components/forms/AddGradeForm";
 
 const Grades = () => {
   const { grades, loading, deleteGrade } = useGradesContext();
-  const [selectedClass, setSelectedClass] = useState<string>("");
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
-  const [selectedEvaluation, setSelectedEvaluation] = useState<string>("");
+  const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [selectedSubject, setSelectedSubject] = useState<string>("all");
+  const [selectedEvaluation, setSelectedEvaluation] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
 
   const classes = ['Maternelle 1', 'Maternelle 2', 'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
@@ -22,9 +22,9 @@ const Grades = () => {
 
   // Filter grades based on selections
   const filteredGrades = grades.filter(grade => {
-    return (!selectedClass || grade.class_name === selectedClass) &&
-           (!selectedSubject || grade.subject_name === selectedSubject) &&
-           (!selectedEvaluation || grade.type === selectedEvaluation);
+    return (!selectedClass || selectedClass === "all" || grade.class_name === selectedClass) &&
+           (!selectedSubject || selectedSubject === "all" || grade.subject_name === selectedSubject) &&
+           (!selectedEvaluation || selectedEvaluation === "all" || grade.type === selectedEvaluation);
   });
 
   // Calculate statistics
@@ -92,7 +92,7 @@ const Grades = () => {
                     <SelectValue placeholder="Sélectionner une classe" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toutes les classes</SelectItem>
+                    <SelectItem value="all">Toutes les classes</SelectItem>
                     {classes.map((cls) => (
                       <SelectItem key={cls} value={cls}>{cls}</SelectItem>
                     ))}
@@ -105,7 +105,7 @@ const Grades = () => {
                     <SelectValue placeholder="Sélectionner une matière" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toutes les matières</SelectItem>
+                    <SelectItem value="all">Toutes les matières</SelectItem>
                     {subjects.map((subject) => (
                       <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                     ))}
@@ -118,7 +118,7 @@ const Grades = () => {
                     <SelectValue placeholder="Sélectionner une évaluation" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toutes les évaluations</SelectItem>
+                    <SelectItem value="all">Toutes les évaluations</SelectItem>
                     {evaluations.map((evaluation) => (
                       <SelectItem key={evaluation} value={evaluation}>{evaluation}</SelectItem>
                     ))}

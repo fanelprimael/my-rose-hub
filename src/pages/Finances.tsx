@@ -13,13 +13,13 @@ import { useState } from "react";
 const Finances = () => {
   const { payments, loading, deletePayment } = usePaymentsContext();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
 
   const filteredPayments = payments.filter(payment => {
     const matchesSearch = payment.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          payment.type.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !selectedStatus || payment.status === selectedStatus;
+    const matchesStatus = !selectedStatus || selectedStatus === "all" || payment.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -136,7 +136,7 @@ const Finances = () => {
                     <SelectValue placeholder="Filtrer par statut" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous les statuts</SelectItem>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
                     <SelectItem value="Payé">Payé</SelectItem>
                     <SelectItem value="Partiel">Partiel</SelectItem>
                     <SelectItem value="En attente">En attente</SelectItem>
