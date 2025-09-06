@@ -7,11 +7,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { School, Users, MapPin, Clock, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useClassesContext } from "@/contexts/ClassesContext";
 import { AddClassForm } from "@/components/forms/AddClassForm";
+import { ViewClassModal } from "@/components/forms/ViewClassModal";
+import { EditClassForm } from "@/components/forms/EditClassForm";
 import { useState } from "react";
 
 const Classes = () => {
   const { classes, loading, deleteClass } = useClassesContext();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [viewingClass, setViewingClass] = useState<any>(null);
+  const [editingClass, setEditingClass] = useState<any>(null);
 
   const getCapacityColor = (current: number, capacity: number) => {
     const percentage = (current / capacity) * 100;
@@ -27,6 +31,8 @@ const Classes = () => {
   return (
     <Layout>
       {showAddForm && <AddClassForm onClose={() => setShowAddForm(false)} />}
+      {viewingClass && <ViewClassModal classData={viewingClass} onClose={() => setViewingClass(null)} />}
+      {editingClass && <EditClassForm classData={editingClass} onClose={() => setEditingClass(null)} />}
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -137,7 +143,7 @@ const Classes = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => {/* TODO: Implement view class details */}}
+                      onClick={() => setViewingClass(schoolClass)}
                     >
                       Voir Détails
                     </Button>
@@ -197,14 +203,14 @@ const Classes = () => {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => {/* TODO: Implement view class details */}}
+                              onClick={() => setViewingClass(schoolClass)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => {/* TODO: Implement edit class */}}
+                              onClick={() => setEditingClass(schoolClass)}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
