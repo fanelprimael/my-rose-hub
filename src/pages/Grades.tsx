@@ -4,14 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, TrendingUp, Users, FileText, Plus, Eye, Edit, UserPlus, FileDown } from "lucide-react";
+import { BookOpen, TrendingUp, Users, FileText, Plus, Eye, Edit, UserPlus, FileDown, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { useGradesContext } from "@/contexts/GradesContext";
 import { useStudentsContext } from "@/contexts/StudentsContext";
 import { AddGradeForm } from "@/components/forms/AddGradeForm";
 import { AddMultipleGradesForm } from "@/components/forms/AddMultipleGradesForm";
 import { ViewStudentGradesModal } from "@/components/forms/ViewStudentGradesModal";
+import { ViewAnnualResultsModal } from "@/components/forms/ViewAnnualResultsModal";
 import { generateBulletin } from "@/utils/exportUtils";
+import { calculateClassResults } from "@/utils/gradeCalculations";
 
 const Grades = () => {
   const { grades, loading } = useGradesContext();
@@ -22,6 +24,7 @@ const Grades = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showMultipleGradesForm, setShowMultipleGradesForm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showAnnualResultsModal, setShowAnnualResultsModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [editMode, setEditMode] = useState(false);
 
@@ -104,6 +107,9 @@ const Grades = () => {
   };
 
   const selectedStudent = students.find(s => s.id === selectedStudentId);
+  
+  // Calculate annual results for the selected class
+  const annualResults = calculateClassResults(students, grades, selectedClass === "all" ? undefined : selectedClass);
 
   if (loading) {
     return <Layout><div className="flex items-center justify-center h-64">Chargement...</div></Layout>;
@@ -154,6 +160,16 @@ const Grades = () => {
               <Badge variant="outline" className="text-sm">
                 {selectedClass === "all" ? "Toutes les classes" : selectedClass}
               </Badge>
+              {selectedClass !== "all" && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAnnualResultsModal(true)}
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Résultats Annuels
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -292,6 +308,15 @@ const Grades = () => {
               setShowViewModal(false);
               handleEditStudent(selectedStudentId);
             }}
+          />
+        )}
+
+        {showAnnualResultsModal && selectedClass !== "all" && (
+          <ViewAnnualResultsModal
+            isOpen={showAnnualResultsModal}
+            onClose={() => setShowAnnualResultsModal(false)}
+            classResults={annualResults}
+            className={selectedClass}
           />
         )}
       </div>

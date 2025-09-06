@@ -1,4 +1,5 @@
 // Utility functions for exporting data to PDF and Excel formats
+import { StudentAnnualResult } from "./gradeCalculations";
 
 export const exportToPDF = async (data: any[], title: string, headers: string[]) => {
   // Simple PDF export using browser print functionality
@@ -165,21 +166,26 @@ export const generatePaymentReceipt = (payment: any) => {
 };
 
 export const generateBulletin = (studentData: any, grades: any[], evaluation: string = 'Toutes évaluations') => {
-  // Group grades by subject and take the most recent grade per subject
-  const subjectGrades = grades.reduce((acc: { [key: string]: any }, grade: any) => {
-    if (!acc[grade.subject_name] || new Date(grade.created_at) > new Date(acc[grade.subject_name].created_at)) {
-      acc[grade.subject_name] = grade;
+  // Group grades by subject and calculate average per subject (sum of 5 evaluations / 5)
+  const subjectGrades = grades.reduce((acc: { [key: string]: any[] }, grade: any) => {
+    if (!acc[grade.subject_name]) {
+      acc[grade.subject_name] = [];
     }
+    acc[grade.subject_name].push(grade);
     return acc;
-  }, {} as { [key: string]: any });
+  }, {} as { [key: string]: any[] });
 
-  // Convert to array and get the grade for each subject
-  const subjectNotes = Object.values(subjectGrades).map((grade: any) => ({
-    subject: grade.subject_name,
-    note: grade.grade
-  }));
+  // Calculate average for each subject
+  const subjectNotes: Array<{subject: string, note: number, evaluationCount: number}> = Object.entries(subjectGrades).map(([subjectName, subjectGradesList]) => {
+    const average = (subjectGradesList as any[]).reduce((sum: number, grade: any) => sum + grade.grade, 0) / (subjectGradesList as any[]).length;
+    return {
+      subject: subjectName,
+      note: average,
+      evaluationCount: (subjectGradesList as any[]).length
+    };
+  });
 
-  // Calculate overall average (simple: somme des notes / nombre de matières)
+  // Calculate overall average (sum of subject averages / number of subjects)
   const overallAverage = subjectNotes.length > 0 ? 
     subjectNotes.reduce((sum: number, subject: any) => sum + subject.note, 0) / subjectNotes.length : 0;
 
@@ -350,7 +356,7 @@ export const generateBulletin = (studentData: any, grades: any[], evaluation: st
             
             return `
               <tr>
-                <td class="subject-column">${subject.subject}</td>
+                <td class="subject-column">${subject.subject} <small>(${subject.evaluationCount} éval.)</small></td>
                 <td class="${gradeClass}">${subject.note.toFixed(1)}/20</td>
                 <td>1</td>
                 <td class="${gradeClass}">${subject.note.toFixed(1)}</td>
@@ -405,357 +411,162 @@ export const generateBulletin = (studentData: any, grades: any[], evaluation: st
   }
 };
 
-export const generateEvaluationBulletin = (studentData: any, grades: any[], evaluation: string) => {
-  // Filter grades for the specific evaluation
-  const evaluationGrades = grades.filter((grade: any) => grade.evaluation === evaluation);
-  
-  // Group grades by subject
-  const subjectGrades = evaluationGrades.reduce((acc: { [key: string]: any[] }, grade: any) => {
-    if (!acc[grade.subject_name]) {
-      acc[grade.subject_name] = [];
-    }
-    acc[grade.subject_name].push(grade);
-    return acc;
-  }, {} as { [key: string]: any[] });
-
-  // Calculate averages per subject
-  const subjectAverages = Object.entries(subjectGrades).map(([subject, subjectGradesList]) => {
-    const average = (subjectGradesList as any[]).reduce((sum: number, grade: any) => sum + grade.grade, 0) / (subjectGradesList as any[]).length;
-    const coefficient = (subjectGradesList[0] as any)?.coefficient || 1;
-    return {
-      subject,
-      average: parseFloat(average.toFixed(2)),
-      coefficient,
-      points: parseFloat((average * coefficient).toFixed(2)),
-      grades: subjectGradesList as any[]
-    };
-  });
-
-  // Calculate overall average
-  const totalPoints = subjectAverages.reduce((sum: number, subject: any) => sum + subject.points, 0);
-  const totalCoefficients = subjectAverages.reduce((sum: number, subject: any) => sum + subject.coefficient, 0);
-  const overallAverage = totalCoefficients > 0 ? totalPoints / totalCoefficients : 0;
-
+export const generateAnnualBulletin = (classResults: StudentAnnualResult[], className: string, stats: any) => {
   const printContent = `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Bulletin ${evaluation} - ${studentData.first_name} ${studentData.last_name}</title>
+      <title>Résultats Annuels - Classe ${className}</title>
       <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .school-name { font-size: 24px; font-weight: bold; color: #2563eb; }
-        .bulletin-title { font-size: 18px; margin-top: 10px; }
-        .student-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .info-box { background: #f8f9fa; padding: 10px; border-radius: 5px; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background-color: #2563eb; color: white; }
-        .subject { text-align: left; }
-        .grade-excellent { color: #16a34a; font-weight: bold; }
-        .grade-good { color: #2563eb; font-weight: bold; }
-        .grade-average { color: #f59e0b; font-weight: bold; }
-        .grade-poor { color: #dc2626; font-weight: bold; }
-        .summary { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; }
-        .signature-section { display: flex; justify-content: space-between; margin-top: 40px; }
-        .signature-box { text-align: center; }
+        @page {
+          size: A4;
+          margin: 15mm;
+        }
+        body { 
+          font-family: Arial, sans-serif; 
+          margin: 0;
+          padding: 0;
+          line-height: 1.4;
+          font-size: 12px;
+        }
+        .header { 
+          text-align: center; 
+          border-bottom: 2px solid #2563eb; 
+          padding-bottom: 10px; 
+          margin-bottom: 15px; 
+        }
+        .school-name { 
+          font-size: 20px; 
+          font-weight: bold; 
+          color: #2563eb; 
+          margin-bottom: 5px;
+        }
+        .report-title { 
+          font-size: 16px; 
+          color: #333;
+        }
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          margin: 15px 0;
+        }
+        .stat-box {
+          background: #f8f9fa;
+          padding: 10px;
+          border-radius: 4px;
+          text-align: center;
+          border: 1px solid #ddd;
+        }
+        .stat-value {
+          font-size: 18px;
+          font-weight: bold;
+          color: #2563eb;
+        }
+        .stat-label {
+          font-size: 10px;
+          color: #666;
+          margin-top: 2px;
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin: 15px 0; 
+          font-size: 10px;
+        }
+        th, td { 
+          border: 1px solid #ddd; 
+          padding: 4px 2px; 
+          text-align: center; 
+        }
+        th { 
+          background-color: #2563eb; 
+          color: white; 
+          font-weight: bold;
+        }
+        .student-name { 
+          text-align: left; 
+          font-weight: 500;
+        }
+        .mention-tb { color: #16a34a; font-weight: bold; }
+        .mention-b { color: #2563eb; font-weight: bold; }
+        .mention-ab { color: #f59e0b; font-weight: bold; }
+        .mention-p { color: #f97316; font-weight: bold; }
+        .mention-i { color: #dc2626; font-weight: bold; }
+        .pass { color: #16a34a; font-weight: bold; }
+        .fail { color: #dc2626; font-weight: bold; }
       </style>
     </head>
     <body>
       <div class="header">
         <div class="school-name">École La Roseraie</div>
-        <div class="bulletin-title">Bulletin - ${evaluation}</div>
+        <div class="report-title">Résultats Annuels - Classe ${className}</div>
+        <div style="font-size: 10px; color: #666;">Année Scolaire 2024-2025 - ${new Date().toLocaleDateString('fr-FR')}</div>
       </div>
 
-      <div class="student-info">
-        <div class="info-box">
-          <strong>Élève:</strong> ${studentData.first_name} ${studentData.last_name}<br>
-          <strong>Classe:</strong> ${studentData.class}<br>
-          <strong>Évaluation:</strong> ${evaluation}
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-value">${stats.studentsEvaluated}/${stats.totalStudents}</div>
+          <div class="stat-label">Élèves Évalués</div>
         </div>
-        <div class="info-box">
-          <strong>Date de naissance:</strong> ${new Date(studentData.date_of_birth).toLocaleDateString('fr-FR')}<br>
-          <strong>Genre:</strong> ${studentData.gender || 'Non spécifié'}<br>
-          <strong>Date d'édition:</strong> ${new Date().toLocaleDateString('fr-FR')}
+        <div class="stat-box">
+          <div class="stat-value">${stats.classAverage}/20</div>
+          <div class="stat-label">Moyenne Classe</div>
         </div>
+        <div class="stat-box">
+          <div class="stat-value">${stats.passRate}%</div>
+          <div class="stat-label">Taux de Réussite</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${stats.mentions['Très Bien'] + stats.mentions['Bien']}</div>
+          <div class="stat-label">Mentions B/TB</div>
+        </div>
+      </div>
+
+      <h3 style="margin: 20px 0 10px; color: #333;">Répartition des Mentions</h3>
+      <div style="display: flex; gap: 15px; margin-bottom: 20px; font-size: 11px;">
+        <span><strong>Très Bien:</strong> ${stats.mentions['Très Bien']}</span>
+        <span><strong>Bien:</strong> ${stats.mentions['Bien']}</span>
+        <span><strong>Assez Bien:</strong> ${stats.mentions['Assez Bien']}</span>
+        <span><strong>Passable:</strong> ${stats.mentions['Passable']}</span>
+        <span><strong>Insuffisant:</strong> ${stats.mentions['Insuffisant']}</span>
       </div>
 
       <table>
         <thead>
           <tr>
-            <th class="subject">Matière</th>
-            <th>Notes</th>
-            <th>Moyenne</th>
-            <th>Coefficient</th>
-            <th>Points</th>
+            <th style="text-align: left; width: 30%;">Élève</th>
+            <th style="width: 12%;">Matières</th>
+            <th style="width: 15%;">Éval. Complètes</th>
+            <th style="width: 15%;">Moyenne</th>
+            <th style="width: 18%;">Mention</th>
+            <th style="width: 10%;">Passage</th>
           </tr>
         </thead>
         <tbody>
-          ${subjectAverages.map((subjectData: any) => {
-            const gradeClass = subjectData.average >= 16 ? 'grade-excellent' : 
-                              subjectData.average >= 12 ? 'grade-good' : 
-                              subjectData.average >= 10 ? 'grade-average' : 'grade-poor';
-            
-            const gradesText = (subjectData.grades as any[]).map((g: any) => `${g.grade}/20 (${g.type})`).join(', ');
+          ${classResults.map((result) => {
+            const mentionClass = result.mention === 'Très Bien' ? 'mention-tb' :
+                                result.mention === 'Bien' ? 'mention-b' :
+                                result.mention === 'Assez Bien' ? 'mention-ab' :
+                                result.mention === 'Passable' ? 'mention-p' : 'mention-i';
             
             return `
               <tr>
-                <td class="subject">${subjectData.subject}</td>
-                <td>${gradesText}</td>
-                <td class="${gradeClass}">${subjectData.average.toFixed(1)}/20</td>
-                <td>${subjectData.coefficient}</td>
-                <td class="${gradeClass}">${subjectData.points.toFixed(1)}</td>
+                <td class="student-name">${result.student_name}</td>
+                <td>${result.totalSubjects}</td>
+                <td>${result.subjectsWithAllEvaluations}/${result.totalSubjects}</td>
+                <td><strong>${result.generalAverage}/20</strong></td>
+                <td class="${mentionClass}">${result.mention}</td>
+                <td class="${result.canPass ? 'pass' : 'fail'}">${result.canPass ? 'Admis' : 'Redouble'}</td>
               </tr>
             `;
           }).join('')}
         </tbody>
       </table>
 
-      <div class="summary">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <strong>Moyenne Générale: ${overallAverage.toFixed(2)}/20</strong>
-          </div>
-          <div>
-            <strong>Mentions:</strong> 
-            ${overallAverage >= 16 ? 'Très Bien' : 
-              overallAverage >= 14 ? 'Bien' : 
-              overallAverage >= 12 ? 'Assez Bien' : 
-              overallAverage >= 10 ? 'Passable' : 'Insuffisant'}
-          </div>
-        </div>
-        <br>
-        <div>
-          <strong>Observations:</strong><br>
-          ${overallAverage >= 14 ? 'Excellent travail ! Continuez ainsi.' : 
-            overallAverage >= 12 ? 'Bon travail, peut mieux faire.' : 
-            overallAverage >= 10 ? 'Travail correct, des efforts sont nécessaires.' : 
-            'Des efforts importants sont nécessaires pour progresser.'}
-        </div>
+      <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">
+        <p>Ce document présente les résultats annuels basés sur la moyenne des 5 évaluations par matière</p>
       </div>
-
-      <div class="signature-section">
-        <div class="signature-box">
-          <br><br>
-          <hr style="width: 150px;">
-          <p>Signature du Professeur</p>
-        </div>
-        <div class="signature-box">
-          <br><br>
-          <hr style="width: 150px;">
-          <p>Signature du Directeur</p>
-        </div>
-        <div class="signature-box">
-          <br><br>
-          <hr style="width: 150px;">
-          <p>Signature des Parents</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    
-    printWindow.onload = () => {
-      printWindow.print();
-    };
-    
-    setTimeout(() => printWindow.close(), 1000);
-  }
-};
-
-// Generate detailed financial summary report
-export const generateFinancialSummaryReport = (payments: any[], period: string = 'Général') => {
-  // Calculate totals by payment type
-  const paymentsByType = payments.reduce((acc: { [key: string]: { total: number, count: number } }, payment: any) => {
-    if (!acc[payment.type]) {
-      acc[payment.type] = { total: 0, count: 0 };
-    }
-    acc[payment.type].total += payment.amount;
-    acc[payment.type].count += 1;
-    return acc;
-  }, {});
-
-  // Calculate status summary
-  const statusSummary = payments.reduce((acc: { [key: string]: { total: number, count: number } }, payment: any) => {
-    if (!acc[payment.status]) {
-      acc[payment.status] = { total: 0, count: 0 };
-    }
-    acc[payment.status].total += payment.amount;
-    acc[payment.status].count += 1;
-    return acc;
-  }, {});
-
-  const totalAmount = payments.reduce((sum: number, payment: any) => sum + payment.amount, 0);
-
-  const printContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Rapport Financier Détaillé</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .school-name { font-size: 24px; font-weight: bold; color: #2563eb; }
-        .report-title { font-size: 18px; margin-top: 10px; }
-        .summary-box { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .total-amount { text-align: center; font-size: 28px; font-weight: bold; color: #16a34a; margin: 20px 0; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #2563eb; color: white; }
-        .amount { text-align: right; font-weight: bold; }
-        .section-title { font-size: 16px; font-weight: bold; margin: 30px 0 10px 0; color: #333; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="school-name">École La Roseraie</div>
-        <div class="report-title">Rapport Financier Détaillé - ${period}</div>
-        <div style="font-size: 12px; color: #666;">Généré le ${new Date().toLocaleDateString('fr-FR')}</div>
-      </div>
-
-      <div class="total-amount">
-        Montant Total: ${totalAmount.toLocaleString()} FCFA
-      </div>
-
-      <div class="section-title">Répartition par Type de Paiement</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Type de Paiement</th>
-            <th>Nombre de Paiements</th>
-            <th class="amount">Montant Total (FCFA)</th>
-            <th class="amount">Pourcentage</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${Object.entries(paymentsByType).map(([type, data]: [string, any]) => `
-            <tr>
-              <td>${type}</td>
-              <td>${data.count}</td>
-              <td class="amount">${data.total.toLocaleString()}</td>
-              <td class="amount">${((data.total / totalAmount) * 100).toFixed(1)}%</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-
-      <div class="section-title">Répartition par Statut</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Statut</th>
-            <th>Nombre de Paiements</th>
-            <th class="amount">Montant Total (FCFA)</th>
-            <th class="amount">Pourcentage</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${Object.entries(statusSummary).map(([status, data]: [string, any]) => `
-            <tr>
-              <td>${status}</td>
-              <td>${data.count}</td>
-              <td class="amount">${data.total.toLocaleString()}</td>
-              <td class="amount">${((data.total / totalAmount) * 100).toFixed(1)}%</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </body>
-    </html>
-  `;
-
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.print();
-    setTimeout(() => printWindow.close(), 1000);
-  }
-};
-
-// Generate academic performance report
-export const generateAcademicPerformanceReport = (students: any[], grades: any[], period: string = 'Général') => {
-  const classPerformance = students.reduce((acc: { [key: string]: { students: number, totalGrades: number, totalPoints: number } }, student: any) => {
-    if (!acc[student.class]) {
-      acc[student.class] = { students: 0, totalGrades: 0, totalPoints: 0 };
-    }
-    
-    const studentGrades = grades.filter((grade: any) => grade.student_id === student.id);
-    const studentAverage = studentGrades.length > 0 
-      ? studentGrades.reduce((sum: number, grade: any) => sum + grade.grade, 0) / studentGrades.length 
-      : 0;
-
-    acc[student.class].students += 1;
-    acc[student.class].totalGrades += studentGrades.length;
-    acc[student.class].totalPoints += studentAverage;
-
-    return acc;
-  }, {});
-
-  const printContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Rapport de Performance Académique</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .school-name { font-size: 24px; font-weight: bold; color: #2563eb; }
-        .report-title { font-size: 18px; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background-color: #2563eb; color: white; }
-        .class-name { text-align: left; font-weight: bold; }
-        .excellent { background-color: #dcfce7; color: #16a34a; }
-        .good { background-color: #dbeafe; color: #2563eb; }
-        .average { background-color: #fef3c7; color: #d97706; }
-        .poor { background-color: #fee2e2; color: #dc2626; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="school-name">École La Roseraie</div>
-        <div class="report-title">Rapport de Performance Académique - ${period}</div>
-        <div style="font-size: 12px; color: #666;">Généré le ${new Date().toLocaleDateString('fr-FR')}</div>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Classe</th>
-            <th>Nombre d'Élèves</th>
-            <th>Total des Notes</th>
-            <th>Moyenne de Classe</th>
-            <th>Performance</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${Object.entries(classPerformance).map(([className, data]: [string, any]) => {
-            const classAverage = data.students > 0 ? (data.totalPoints / data.students) : 0;
-            const performanceClass = classAverage >= 16 ? 'excellent' : 
-                                   classAverage >= 12 ? 'good' : 
-                                   classAverage >= 10 ? 'average' : 'poor';
-            const performanceText = classAverage >= 16 ? 'Excellent' : 
-                                  classAverage >= 12 ? 'Bon' : 
-                                  classAverage >= 10 ? 'Moyen' : 'Faible';
-            
-            return `
-              <tr>
-                <td class="class-name">${className}</td>
-                <td>${data.students}</td>
-                <td>${data.totalGrades}</td>
-                <td>${classAverage.toFixed(2)}/20</td>
-                <td class="${performanceClass}">${performanceText}</td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
     </body>
     </html>
   `;
