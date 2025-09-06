@@ -11,7 +11,7 @@ import { useStudentsContext } from "@/contexts/StudentsContext";
 import { AddGradeForm } from "@/components/forms/AddGradeForm";
 import { AddMultipleGradesForm } from "@/components/forms/AddMultipleGradesForm";
 import { ViewStudentGradesModal } from "@/components/forms/ViewStudentGradesModal";
-import { generateClassicBulletin } from "@/utils/exportUtils";
+import { generateBulletin } from "@/utils/exportUtils";
 
 const Grades = () => {
   const { grades, loading } = useGradesContext();
@@ -88,7 +88,7 @@ const Grades = () => {
     const studentGrades = grades.filter(grade => grade.student_id === studentId);
     
     if (student && studentGrades.length > 0) {
-      generateClassicBulletin(student, studentGrades);
+      generateBulletin(student, studentGrades);
     }
   };
 

@@ -75,122 +75,6 @@ export const exportToCSV = (data: any[], filename: string, headers: string[]) =>
   document.body.removeChild(link);
 };
 
-export const generateBulletin = (studentData: any, grades: any[], evaluation: string = 'Evaluation 1') => {
-  const printContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Bulletin de ${studentData.first_name} ${studentData.last_name} - ${evaluation}</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .school-name { font-size: 24px; font-weight: bold; color: #2563eb; }
-        .bulletin-title { font-size: 18px; margin-top: 10px; }
-        .student-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .info-box { background: #f8f9fa; padding: 10px; border-radius: 5px; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background-color: #2563eb; color: white; }
-        .subject { text-align: left; }
-        .grade-excellent { color: #16a34a; font-weight: bold; }
-        .grade-good { color: #2563eb; font-weight: bold; }
-        .grade-average { color: #f59e0b; font-weight: bold; }
-        .grade-poor { color: #dc2626; font-weight: bold; }
-        .summary { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; }
-        .signature-section { display: flex; justify-content: space-between; margin-top: 40px; }
-        .signature-box { text-align: center; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="school-name">École La Roseraie</div>
-        <div class="bulletin-title">Bulletin Scolaire - ${evaluation}</div>
-      </div>
-
-      <div class="student-info">
-        <div class="info-box">
-          <strong>Élève:</strong> ${studentData.first_name} ${studentData.last_name}<br>
-          <strong>Classe:</strong> ${studentData.class}<br>
-          <strong>Année Scolaire:</strong> 2024-2025<br>
-          <strong>Évaluation:</strong> ${evaluation}
-        </div>
-        <div class="info-box">
-          <strong>Date de naissance:</strong> ${new Date(studentData.date_of_birth).toLocaleDateString('fr-FR')}<br>
-          <strong>Genre:</strong> ${studentData.gender || 'Non spécifié'}<br>
-          <strong>Date d'édition:</strong> ${new Date().toLocaleDateString('fr-FR')}
-        </div>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th class="subject">Matière</th>
-            <th>Évaluation 1</th>
-            <th>Évaluation 2</th>
-            <th>Évaluation 3</th>
-            <th>Évaluation 4</th>
-            <th>Évaluation 5</th>
-            <th>Moyenne</th>
-            <th>Coefficient</th>
-            <th>Points</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${grades.map(grade => {
-            const average = grade.average || 0;
-            const gradeClass = average >= 16 ? 'grade-excellent' : 
-                             average >= 12 ? 'grade-good' : 
-                             average >= 10 ? 'grade-average' : 'grade-poor';
-            
-            return `
-              <tr>
-                <td class="subject">${grade.subject}</td>
-                <td>${grade.eval1 || '-'}</td>
-                <td>${grade.eval2 || '-'}</td>
-                <td>${grade.eval3 || '-'}</td>
-                <td>${grade.eval4 || '-'}</td>
-                <td>${grade.eval5 || '-'}</td>
-                <td class="${gradeClass}">${average.toFixed(1)}/20</td>
-                <td>${grade.coefficient || 1}</td>
-                <td class="${gradeClass}">${(average * (grade.coefficient || 1)).toFixed(1)}</td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-
-      <div class="summary">
-        <strong>Résumé:</strong><br>
-        Total des points: ${grades.reduce((sum, g) => sum + (g.average || 0) * (g.coefficient || 1), 0).toFixed(1)}<br>
-        Total des coefficients: ${grades.reduce((sum, g) => sum + (g.coefficient || 1), 0)}<br>
-        Moyenne générale: ${grades.length > 0 ? (grades.reduce((sum, g) => sum + (g.average || 0) * (g.coefficient || 1), 0) / grades.reduce((sum, g) => sum + (g.coefficient || 1), 0)).toFixed(2) : 0}/20
-      </div>
-
-      <div class="signature-section">
-        <div class="signature-box">
-          <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">
-            Directeur
-          </div>
-        </div>
-        <div class="signature-box">
-          <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">
-            Parent/Tuteur
-          </div>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.print();
-    setTimeout(() => printWindow.close(), 1000);
-  }
-};
-
 export const generatePaymentReceipt = (payment: any) => {
   const printContent = `
     <!DOCTYPE html>
@@ -280,69 +164,69 @@ export const generatePaymentReceipt = (payment: any) => {
   }
 };
 
-export const generateClassicBulletin = (studentData: any, grades: any[], evaluation: string = 'Toutes évaluations') => {
-  // Group grades by subject
-  const subjectGrades = grades.reduce((acc: { [key: string]: any[] }, grade: any) => {
-    if (!acc[grade.subject_name]) {
-      acc[grade.subject_name] = [];
+export const generateBulletin = (studentData: any, grades: any[], evaluation: string = 'Toutes évaluations') => {
+  // Group grades by subject and take the most recent grade per subject
+  const subjectGrades = grades.reduce((acc: { [key: string]: any }, grade: any) => {
+    if (!acc[grade.subject_name] || new Date(grade.created_at) > new Date(acc[grade.subject_name].created_at)) {
+      acc[grade.subject_name] = grade;
     }
-    acc[grade.subject_name].push(grade);
     return acc;
-  }, {} as { [key: string]: any[] });
+  }, {} as { [key: string]: any });
 
-  // Calculate averages per subject (coefficient = 1 for all)
-  const subjectAverages = Object.entries(subjectGrades).map(([subject, subjectGradesList]) => {
-    const average = (subjectGradesList as any[]).reduce((sum: number, grade: any) => sum + grade.grade, 0) / (subjectGradesList as any[]).length;
-    return {
-      subject,
-      average: parseFloat(average.toFixed(2)),
-      grades: subjectGradesList as any[]
-    };
-  });
+  // Convert to array and get the grade for each subject
+  const subjectNotes = Object.values(subjectGrades).map((grade: any) => ({
+    subject: grade.subject_name,
+    note: grade.grade
+  }));
 
-  // Calculate overall average (simple: somme des moyennes / nombre de matières)
-  const overallAverage = subjectAverages.length > 0 ? 
-    subjectAverages.reduce((sum: number, subject: any) => sum + subject.average, 0) / subjectAverages.length : 0;
+  // Calculate overall average (simple: somme des notes / nombre de matières)
+  const overallAverage = subjectNotes.length > 0 ? 
+    subjectNotes.reduce((sum: number, subject: any) => sum + subject.note, 0) / subjectNotes.length : 0;
 
   const printContent = `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Bulletin Classique - ${studentData.first_name} ${studentData.last_name}</title>
+      <title>Bulletin - ${studentData.first_name} ${studentData.last_name}</title>
       <style>
+        @page {
+          size: A4;
+          margin: 15mm;
+        }
         body { 
           font-family: Arial, sans-serif; 
-          margin: 20px; 
-          line-height: 1.6;
+          margin: 0;
+          padding: 0;
+          line-height: 1.4;
+          font-size: 12px;
         }
         .header { 
           text-align: center; 
-          border-bottom: 3px solid #2563eb; 
-          padding-bottom: 20px; 
-          margin-bottom: 30px; 
+          border-bottom: 2px solid #2563eb; 
+          padding-bottom: 10px; 
+          margin-bottom: 15px; 
         }
         .school-name { 
-          font-size: 28px; 
+          font-size: 20px; 
           font-weight: bold; 
           color: #2563eb; 
-          margin-bottom: 10px;
+          margin-bottom: 5px;
         }
         .bulletin-title { 
-          font-size: 20px; 
+          font-size: 16px; 
           color: #333;
-          margin-bottom: 5px;
         }
         .student-info { 
           background: #f8f9fa; 
-          padding: 20px; 
-          border-radius: 8px; 
-          margin-bottom: 30px;
-          border-left: 4px solid #2563eb;
+          padding: 10px; 
+          border-radius: 4px; 
+          margin-bottom: 15px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
         }
-        .info-row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 10px;
+        .info-item {
+          font-size: 11px;
         }
         .info-label {
           font-weight: bold;
@@ -351,116 +235,125 @@ export const generateClassicBulletin = (studentData: any, grades: any[], evaluat
         table { 
           width: 100%; 
           border-collapse: collapse; 
-          margin: 30px 0; 
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          margin: 15px 0; 
+          font-size: 11px;
         }
         th, td { 
           border: 1px solid #ddd; 
-          padding: 12px 8px; 
+          padding: 6px 4px; 
           text-align: center; 
         }
         th { 
           background-color: #2563eb; 
           color: white; 
           font-weight: bold;
-          font-size: 14px;
         }
         .subject-column { 
           text-align: left; 
           font-weight: 500;
-          background-color: #f8f9fa;
         }
-        .grade-cell {
-          font-weight: bold;
-          font-size: 14px;
-        }
-        .grade-excellent { color: #16a34a; }
-        .grade-good { color: #2563eb; }
-        .grade-average { color: #f59e0b; }
-        .grade-poor { color: #dc2626; }
+        .grade-excellent { color: #16a34a; font-weight: bold; }
+        .grade-good { color: #2563eb; font-weight: bold; }
+        .grade-average { color: #f59e0b; font-weight: bold; }
+        .grade-poor { color: #dc2626; font-weight: bold; }
         .summary { 
-          background: linear-gradient(135deg, #2563eb, #1d4ed8); 
+          background: #2563eb; 
           color: white;
-          padding: 20px; 
-          border-radius: 8px; 
-          margin: 30px 0; 
+          padding: 10px; 
+          border-radius: 4px; 
+          margin: 15px 0; 
           text-align: center;
         }
         .average-score {
-          font-size: 24px;
+          font-size: 18px;
           font-weight: bold;
-          margin: 10px 0;
+          margin: 5px 0;
         }
-        .signature-section { 
-          margin-top: 60px; 
+        .appreciation {
+          background: #f8f9fa;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          padding: 10px;
+          margin: 15px 0;
+        }
+        .appreciation-title {
+          font-weight: bold;
+          margin-bottom: 5px;
+          color: #333;
+        }
+        .appreciation-text {
+          font-style: italic;
+          min-height: 40px;
+          border: none;
+          outline: none;
+          resize: none;
+          width: 100%;
+          background: transparent;
+        }
+        .signatures { 
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          margin-top: 20px;
+        }
+        .signature-box {
           text-align: center;
         }
         .signature-line {
-          border-top: 2px solid #333;
-          margin: 60px auto 10px;
-          width: 200px;
+          border-top: 1px solid #333;
+          margin: 30px auto 5px;
+          width: 120px;
         }
         .signature-label {
+          font-size: 10px;
           font-weight: bold;
           color: #333;
-        }
-        .footer {
-          text-align: center;
-          margin-top: 40px;
-          font-size: 12px;
-          color: #666;
         }
       </style>
     </head>
     <body>
       <div class="header">
         <div class="school-name">École La Roseraie</div>
-        <div class="bulletin-title">Bulletin Classique</div>
-        <div style="font-size: 14px; color: #666;">Année Scolaire 2024-2025</div>
+        <div class="bulletin-title">Bulletin Scolaire</div>
+        <div style="font-size: 10px; color: #666;">Année Scolaire 2024-2025</div>
       </div>
 
       <div class="student-info">
-        <div class="info-row">
-          <span class="info-label">Nom et Prénom:</span>
-          <span>${studentData.first_name} ${studentData.last_name}</span>
+        <div class="info-item">
+          <span class="info-label">Nom et Prénom:</span> ${studentData.first_name} ${studentData.last_name}
         </div>
-        <div class="info-row">
-          <span class="info-label">Classe:</span>
-          <span>${studentData.class}</span>
+        <div class="info-item">
+          <span class="info-label">Classe:</span> ${studentData.class}
         </div>
-        <div class="info-row">
-          <span class="info-label">Date de naissance:</span>
-          <span>${new Date(studentData.date_of_birth).toLocaleDateString('fr-FR')}</span>
+        <div class="info-item">
+          <span class="info-label">Date de naissance:</span> ${new Date(studentData.date_of_birth).toLocaleDateString('fr-FR')}
         </div>
-        <div class="info-row">
-          <span class="info-label">Date d'édition:</span>
-          <span>${new Date().toLocaleDateString('fr-FR')}</span>
+        <div class="info-item">
+          <span class="info-label">Date d'édition:</span> ${new Date().toLocaleDateString('fr-FR')}
         </div>
       </div>
 
       <table>
         <thead>
           <tr>
-            <th style="text-align: left;">Matières</th>
-            <th>Notes Obtenues</th>
-            <th>Moyenne</th>
-            <th>Coefficient</th>
+            <th style="text-align: left; width: 40%;">Matières</th>
+            <th style="width: 20%;">Note</th>
+            <th style="width: 20%;">Coefficient</th>
+            <th style="width: 20%;">Points</th>
           </tr>
         </thead>
         <tbody>
-          ${subjectAverages.map((subjectData: any) => {
-            const gradeClass = subjectData.average >= 16 ? 'grade-excellent' : 
-                              subjectData.average >= 12 ? 'grade-good' : 
-                              subjectData.average >= 10 ? 'grade-average' : 'grade-poor';
-            
-            const gradesText = (subjectData.grades as any[]).map((g: any) => `${g.grade}`).join(' - ');
+          ${subjectNotes.map((subject: any) => {
+            const gradeClass = subject.note >= 16 ? 'grade-excellent' : 
+                              subject.note >= 12 ? 'grade-good' : 
+                              subject.note >= 10 ? 'grade-average' : 'grade-poor';
             
             return `
               <tr>
-                <td class="subject-column">${subjectData.subject}</td>
-                <td>${gradesText}</td>
-                <td class="grade-cell ${gradeClass}">${subjectData.average.toFixed(1)}/20</td>
+                <td class="subject-column">${subject.subject}</td>
+                <td class="${gradeClass}">${subject.note.toFixed(1)}/20</td>
                 <td>1</td>
+                <td class="${gradeClass}">${subject.note.toFixed(1)}</td>
               </tr>
             `;
           }).join('')}
@@ -468,10 +361,9 @@ export const generateClassicBulletin = (studentData: any, grades: any[], evaluat
       </table>
 
       <div class="summary">
-        <div style="font-size: 18px; margin-bottom: 10px;">Résultats</div>
+        <div style="font-size: 14px;">Moyenne Générale</div>
         <div class="average-score">${overallAverage.toFixed(2)}/20</div>
-        <div style="font-size: 16px;">Moyenne Générale</div>
-        <div style="margin-top: 15px; font-size: 14px;">
+        <div style="font-size: 12px;">
           Mention: ${overallAverage >= 16 ? 'Très Bien' : 
                      overallAverage >= 14 ? 'Bien' : 
                      overallAverage >= 12 ? 'Assez Bien' : 
@@ -479,13 +371,26 @@ export const generateClassicBulletin = (studentData: any, grades: any[], evaluat
         </div>
       </div>
 
-      <div class="signature-section">
-        <div class="signature-line"></div>
-        <div class="signature-label">Le Directeur / La Directrice</div>
+      <div class="appreciation">
+        <div class="appreciation-title">Appréciation de l'enseignant:</div>
+        <div class="appreciation-text">
+          ${overallAverage >= 16 ? 'Excellent travail ! L\'élève fait preuve d\'un très bon niveau et d\'une grande régularité dans ses efforts.' : 
+            overallAverage >= 14 ? 'Bon travail. L\'élève montre de bonnes capacités et peut encore progresser avec plus de régularité.' : 
+            overallAverage >= 12 ? 'Travail correct. L\'élève a les capacités nécessaires mais doit fournir des efforts plus soutenus.' : 
+            overallAverage >= 10 ? 'Travail juste suffisant. L\'élève doit redoubler d\'efforts pour consolider ses acquis.' : 
+            'Travail insuffisant. L\'élève doit impérativement revoir ses méthodes de travail et s\'investir davantage.'}
+        </div>
       </div>
 
-      <div class="footer">
-        Bulletin généré automatiquement le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}
+      <div class="signatures">
+        <div class="signature-box">
+          <div class="signature-line"></div>
+          <div class="signature-label">L'Enseignant</div>
+        </div>
+        <div class="signature-box">
+          <div class="signature-line"></div>
+          <div class="signature-label">Le Directeur</div>
+        </div>
       </div>
     </body>
     </html>
