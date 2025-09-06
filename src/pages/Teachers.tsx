@@ -5,9 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Mail, Phone, Calendar, DollarSign, BookOpen, Users, UserPlus } from "lucide-react";
 import { useTeachersContext } from "@/contexts/TeachersContext";
+import { AddTeacherForm } from "@/components/forms/AddTeacherForm";
+import { useState } from "react";
 
 const Teachers = () => {
-  const { teachers } = useTeachersContext();
+  const { teachers, loading } = useTeachersContext();
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  if (loading) {
+    return <Layout><div className="flex items-center justify-center h-64">Chargement...</div></Layout>;
+  }
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -19,6 +26,7 @@ const Teachers = () => {
 
   return (
     <Layout>
+      {showAddForm && <AddTeacherForm onClose={() => setShowAddForm(false)} />}
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -28,7 +36,7 @@ const Teachers = () => {
               Gérez les informations du personnel enseignant
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button onClick={() => setShowAddForm(true)} className="bg-primary hover:bg-primary/90">
             <UserPlus className="mr-2 h-4 w-4" />
             Nouvel Enseignant
           </Button>
@@ -67,12 +75,8 @@ const Teachers = () => {
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-8 w-8 text-education-success" />
                 <div>
-                  <p className="text-2xl font-bold">
-                    {new Intl.NumberFormat('fr-FR').format(
-                      teachers.reduce((sum, t) => sum + t.salary, 0)
-                    )}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Masse Salariale (FCFA)</p>
+                  <p className="text-2xl font-bold">0 FCFA</p>
+                  <p className="text-sm text-muted-foreground">Masse Salariale</p>
                 </div>
               </div>
             </CardContent>
@@ -87,12 +91,12 @@ const Teachers = () => {
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-12 w-12">
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {getInitials(teacher.firstName, teacher.lastName)}
+                      {teacher.first_name?.[0]}{teacher.last_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <CardTitle className="text-lg">
-                      {teacher.firstName} {teacher.lastName}
+                      {teacher.first_name} {teacher.last_name}
                     </CardTitle>
                     <Badge 
                       className={teacher.status === 'active' 
@@ -117,11 +121,11 @@ const Teachers = () => {
                   </div>
                   <div className="flex items-center space-x-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>Depuis {new Date(teacher.hireDate).getFullYear()}</span>
+                    <span>Depuis {teacher.hire_date ? new Date(teacher.hire_date).getFullYear() : 'N/A'}</span>
                   </div>
                   <div className="flex items-center space-x-2 text-muted-foreground">
                     <DollarSign className="h-4 w-4" />
-                    <span>{formatSalary(teacher.salary)}</span>
+                    <span>0 FCFA</span>
                   </div>
                 </div>
 

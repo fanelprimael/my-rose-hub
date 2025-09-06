@@ -53,7 +53,7 @@ const Classes = () => {
                 <Users className="h-8 w-8 text-education-accent" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {classes.reduce((sum, cls) => sum + cls.currentStudents, 0)}
+                    {classes.reduce((sum, cls) => sum + cls.student_count, 0)}
                   </p>
                   <p className="text-sm text-muted-foreground">Total Élèves</p>
                 </div>
@@ -81,8 +81,8 @@ const Classes = () => {
                 <Clock className="h-8 w-8 text-education-success" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {Math.round((classes.reduce((sum, cls) => sum + cls.currentStudents, 0) / 
-                    classes.reduce((sum, cls) => sum + cls.capacity, 0)) * 100)}%
+                    {classes.length > 0 ? Math.round((classes.reduce((sum, cls) => sum + cls.student_count, 0) / 
+                    classes.reduce((sum, cls) => sum + cls.capacity, 0)) * 100) : 0}%
                   </p>
                   <p className="text-sm text-muted-foreground">Taux d'Occupation</p>
                 </div>
@@ -94,7 +94,7 @@ const Classes = () => {
         {/* Classes Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {classes.map((schoolClass) => {
-            const occupancyPercentage = (schoolClass.currentStudents / schoolClass.capacity) * 100;
+            const occupancyPercentage = (schoolClass.student_count / schoolClass.capacity) * 100;
             
             return (
               <Card key={schoolClass.id} className="shadow-soft hover:shadow-lg transition-shadow">
@@ -107,8 +107,8 @@ const Classes = () => {
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-2 text-sm">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className={getCapacityColor(schoolClass.currentStudents, schoolClass.capacity)}>
-                      {schoolClass.currentStudents}/{schoolClass.capacity} élèves
+                    <span className={getCapacityColor(schoolClass.student_count, schoolClass.capacity)}>
+                      {schoolClass.student_count}/{schoolClass.capacity} élèves
                     </span>
                   </div>
 
@@ -119,24 +119,11 @@ const Classes = () => {
                       <School className="h-4 w-4" />
                       <span>{schoolClass.teacher}</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4" />
-                      <span>{schoolClass.room}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-4 w-4" />
-                      <span>{schoolClass.schedule}</span>
-                    </div>
                   </div>
 
                   <div className="flex justify-between items-center pt-2">
-                    <Badge 
-                      className={schoolClass.status === 'active' 
-                        ? "bg-education-success/10 text-education-success hover:bg-education-success/20" 
-                        : "bg-muted"
-                      }
-                    >
-                      {schoolClass.status === 'active' ? 'Active' : 'Inactive'}
+                    <Badge className="bg-education-success/10 text-education-success hover:bg-education-success/20">
+                      Active
                     </Badge>
                     <Button variant="outline" size="sm">
                       Voir Détails

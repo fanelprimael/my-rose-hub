@@ -1,87 +1,172 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Student {
   id: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  age?: number;
+  gender?: 'masculin' | 'feminin';
   class: string;
-  parentName: string;
-  parentPhone: string;
+  parent_name: string;
+  parent_phone: string;
+  parent_email: string;
   address: string;
-  status: 'active' | 'inactive' | 'graduated';
-  createdAt: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface StudentsContextType {
   students: Student[];
-  addStudent: (student: Omit<Student, 'id' | 'createdAt'>) => void;
-  updateStudent: (id: string, student: Partial<Student>) => void;
-  deleteStudent: (id: string) => void;
+  loading: boolean;
+  addStudent: (student: Omit<Student, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateStudent: (id: string, student: Partial<Student>) => Promise<void>;
+  deleteStudent: (id: string) => Promise<void>;
   getStudent: (id: string) => Student | undefined;
+  refreshStudents: () => Promise<void>;
 }
 
 const StudentsContext = createContext<StudentsContextType | undefined>(undefined);
 
 export const StudentsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: '1',
-      firstName: 'Amirah',
-      lastName: 'Diallo',
-      dateOfBirth: '2015-03-15',
-      class: 'CP',
-      parentName: 'Fatou Diallo',
-      parentPhone: '+221 77 123 4567',
-      address: 'Dakar, Sénégal',
-      status: 'active',
-      createdAt: '2024-01-15',
-    },
-    {
-      id: '2',
-      firstName: 'Ibrahim',
-      lastName: 'Ba',
-      dateOfBirth: '2014-07-22',
-      class: 'CE1',
-      parentName: 'Moussa Ba',
-      parentPhone: '+221 76 987 6543',
-      address: 'Thiès, Sénégal',
-      status: 'active',
-      createdAt: '2024-01-16',
-    },
-    {
-      id: '3',
-      firstName: 'Mariama',
-      lastName: 'Sall',
-      dateOfBirth: '2013-11-08',
-      class: 'CE2',
-      parentName: 'Aminata Sall',
-      parentPhone: '+221 78 555 1234',
-      address: 'Saint-Louis, Sénégal',
-      status: 'active',
-      createdAt: '2024-01-17',
-    },
-  ]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const addStudent = (studentData: Omit<Student, 'id' | 'createdAt'>) => {
-    const newStudent: Student = {
-      ...studentData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setStudents(prev => [...prev, newStudent]);
+  const refreshStudents = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching students:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les élèves",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setStudents(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateStudent = (id: string, studentData: Partial<Student>) => {
-    setStudents(prev => 
-      prev.map(student => 
-        student.id === id ? { ...student, ...studentData } : student
-      )
-    );
+  useEffect(() => {
+    refreshStudents();
+  }, []);
+
+  const addStudent = async (studentData: Omit<Student, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { error } = await supabase
+        .from('students')
+        .insert([studentData]);
+
+      if (error) {
+        console.error('Error adding student:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible d'ajouter l'élève",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Élève ajouté avec succès"
+      });
+      
+      await refreshStudents();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    }
   };
 
-  const deleteStudent = (id: string) => {
-    setStudents(prev => prev.filter(student => student.id !== id));
+  const updateStudent = async (id: string, studentData: Partial<Student>) => {
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update(studentData)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating student:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de modifier l'élève",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Élève modifié avec succès"
+      });
+      
+      await refreshStudents();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteStudent = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting student:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer l'élève",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Élève supprimé avec succès"
+      });
+      
+      await refreshStudents();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStudent = (id: string) => {
@@ -91,10 +176,12 @@ export const StudentsProvider: React.FC<{ children: ReactNode }> = ({ children }
   return (
     <StudentsContext.Provider value={{
       students,
+      loading,
       addStudent,
       updateStudent,
       deleteStudent,
-      getStudent
+      getStudent,
+      refreshStudents
     }}>
       {children}
     </StudentsContext.Provider>

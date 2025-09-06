@@ -1,86 +1,169 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Teacher {
   id: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone: string;
   subjects: string[];
   classes: string[];
-  status: 'active' | 'inactive';
-  hireDate: string;
-  salary: number;
+  status: string;
+  hire_date?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface TeachersContextType {
   teachers: Teacher[];
-  addTeacher: (teacher: Omit<Teacher, 'id'>) => void;
-  updateTeacher: (id: string, teacher: Partial<Teacher>) => void;
-  deleteTeacher: (id: string) => void;
+  loading: boolean;
+  addTeacher: (teacher: Omit<Teacher, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateTeacher: (id: string, teacher: Partial<Teacher>) => Promise<void>;
+  deleteTeacher: (id: string) => Promise<void>;
   getTeacher: (id: string) => Teacher | undefined;
+  refreshTeachers: () => Promise<void>;
 }
 
 const TeachersContext = createContext<TeachersContextType | undefined>(undefined);
 
 export const TeachersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [teachers, setTeachers] = useState<Teacher[]>([
-    {
-      id: '1',
-      firstName: 'Khadija',
-      lastName: 'Ndiaye',
-      email: 'k.ndiaye@laroseraie.sn',
-      phone: '+221 77 111 2222',
-      subjects: ['Français', 'Mathématiques'],
-      classes: ['CP', 'CE1'],
-      status: 'active',
-      hireDate: '2020-09-01',
-      salary: 150000,
-    },
-    {
-      id: '2',
-      firstName: 'Alioune',
-      lastName: 'Sarr',
-      email: 'a.sarr@laroseraie.sn',
-      phone: '+221 76 333 4444',
-      subjects: ['Sciences', 'Histoire-Géographie'],
-      classes: ['CE2', 'CM1'],
-      status: 'active',
-      hireDate: '2019-08-15',
-      salary: 175000,
-    },
-    {
-      id: '3',
-      firstName: 'Aïcha',
-      lastName: 'Fall',
-      email: 'a.fall@laroseraie.sn',
-      phone: '+221 78 555 6666',
-      subjects: ['Anglais', 'Éducation Physique'],
-      classes: ['CM1', 'CM2'],
-      status: 'active',
-      hireDate: '2021-01-10',
-      salary: 140000,
-    },
-  ]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const addTeacher = (teacherData: Omit<Teacher, 'id'>) => {
-    const newTeacher: Teacher = {
-      ...teacherData,
-      id: Date.now().toString(),
-    };
-    setTeachers(prev => [...prev, newTeacher]);
+  const refreshTeachers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('teachers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching teachers:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les enseignants",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setTeachers(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateTeacher = (id: string, teacherData: Partial<Teacher>) => {
-    setTeachers(prev => 
-      prev.map(teacher => 
-        teacher.id === id ? { ...teacher, ...teacherData } : teacher
-      )
-    );
+  useEffect(() => {
+    refreshTeachers();
+  }, []);
+
+  const addTeacher = async (teacherData: Omit<Teacher, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { error } = await supabase
+        .from('teachers')
+        .insert([teacherData]);
+
+      if (error) {
+        console.error('Error adding teacher:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible d'ajouter l'enseignant",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Enseignant ajouté avec succès"
+      });
+      
+      await refreshTeachers();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    }
   };
 
-  const deleteTeacher = (id: string) => {
-    setTeachers(prev => prev.filter(teacher => teacher.id !== id));
+  const updateTeacher = async (id: string, teacherData: Partial<Teacher>) => {
+    try {
+      const { error } = await supabase
+        .from('teachers')
+        .update(teacherData)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating teacher:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de modifier l'enseignant",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Enseignant modifié avec succès"
+      });
+      
+      await refreshTeachers();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteTeacher = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('teachers')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting teacher:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer l'enseignant",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Enseignant supprimé avec succès"
+      });
+      
+      await refreshTeachers();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    }
   };
 
   const getTeacher = (id: string) => {
@@ -90,10 +173,12 @@ export const TeachersProvider: React.FC<{ children: ReactNode }> = ({ children }
   return (
     <TeachersContext.Provider value={{
       teachers,
+      loading,
       addTeacher,
       updateTeacher,
       deleteTeacher,
-      getTeacher
+      getTeacher,
+      refreshTeachers
     }}>
       {children}
     </TeachersContext.Provider>

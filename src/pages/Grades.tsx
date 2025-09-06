@@ -3,30 +3,48 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, TrendingUp, Users, FileText, Plus } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BookOpen, TrendingUp, Users, FileText, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useGradesContext } from "@/contexts/GradesContext";
+import { AddGradeForm } from "@/components/forms/AddGradeForm";
 
 const Grades = () => {
+  const { grades, loading, deleteGrade } = useGradesContext();
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [selectedEvaluation, setSelectedEvaluation] = useState<string>("");
+  const [showAddForm, setShowAddForm] = useState(false);
 
-  const classes = ['CP', 'CE1', 'CE2', 'CM1', 'CM2'];
-  const subjects = ['Français', 'Mathématiques', 'Sciences', 'Histoire-Géographie', 'Anglais'];
+  const classes = ['Maternelle 1', 'Maternelle 2', 'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
+  const subjects = ['ANGLAIS', 'ES', 'EST', 'EA', 'MATHÉMATIQUES', 'LECTURE', 'EXPRESSION ÉCRITE', 'POÉSIE/CHANT'];
+  const evaluations = ['Evaluation 1', 'Evaluation 2', 'Evaluation 3', 'Evaluation 4', 'Evaluation 5'];
 
-  // Mock data for demonstration
-  const gradeStats = [
-    { subject: 'Français', average: 14.5, students: 28 },
-    { subject: 'Mathématiques', average: 13.2, students: 28 },
-    { subject: 'Sciences', average: 15.1, students: 28 },
-    { subject: 'Histoire-Géo', average: 14.8, students: 28 },
-  ];
+  // Filter grades based on selections
+  const filteredGrades = grades.filter(grade => {
+    return (!selectedClass || grade.class_name === selectedClass) &&
+           (!selectedSubject || grade.subject_name === selectedSubject) &&
+           (!selectedEvaluation || grade.type === selectedEvaluation);
+  });
 
-  const recentGrades = [
-    { student: 'Amirah Diallo', subject: 'Français', grade: 16, date: '2024-01-20' },
-    { student: 'Ibrahim Ba', subject: 'Mathématiques', grade: 14, date: '2024-01-20' },
-    { student: 'Mariama Sall', subject: 'Sciences', grade: 18, date: '2024-01-19' },
-    { student: 'Amirah Diallo', subject: 'Histoire-Géo', grade: 15, date: '2024-01-19' },
-  ];
+  // Calculate statistics
+  const totalGrades = filteredGrades.length;
+  const averageGrade = totalGrades > 0 ? 
+    filteredGrades.reduce((sum, grade) => sum + grade.grade, 0) / totalGrades : 0;
+  const passRate = totalGrades > 0 ? 
+    (filteredGrades.filter(grade => grade.grade >= 10).length / totalGrades) * 100 : 0;
+
+  // Calculate subject averages
+  const subjectStats = subjects.map(subject => {
+    const subjectGrades = filteredGrades.filter(grade => grade.subject_name === subject);
+    const average = subjectGrades.length > 0 ?
+      subjectGrades.reduce((sum, grade) => sum + grade.grade, 0) / subjectGrades.length : 0;
+    return {
+      subject,
+      average: parseFloat(average.toFixed(1)),
+      count: subjectGrades.length
+    };
+  }).filter(stat => stat.count > 0);
 
   const getGradeColor = (grade: number) => {
     if (grade >= 16) return "text-education-success";
@@ -42,8 +60,13 @@ const Grades = () => {
     return "bg-education-danger/10 text-education-danger hover:bg-education-danger/20";
   };
 
+  if (loading) {
+    return <Layout><div className="flex items-center justify-center h-64">Chargement...</div></Layout>;
+  }
+
   return (
     <Layout>
+      {showAddForm && <AddGradeForm onClose={() => setShowAddForm(false)} />}
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -53,7 +76,7 @@ const Grades = () => {
               Saisie et suivi des évaluations des élèves
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button onClick={() => setShowAddForm(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle Note
           </Button>
@@ -69,6 +92,7 @@ const Grades = () => {
                     <SelectValue placeholder="Sélectionner une classe" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">Toutes les classes</SelectItem>
                     {classes.map((cls) => (
                       <SelectItem key={cls} value={cls}>{cls}</SelectItem>
                     ))}
@@ -81,8 +105,22 @@ const Grades = () => {
                     <SelectValue placeholder="Sélectionner une matière" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">Toutes les matières</SelectItem>
                     {subjects.map((subject) => (
                       <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Select value={selectedEvaluation} onValueChange={setSelectedEvaluation}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une évaluation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Toutes les évaluations</SelectItem>
+                    {evaluations.map((evaluation) => (
+                      <SelectItem key={evaluation} value={evaluation}>{evaluation}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -102,7 +140,7 @@ const Grades = () => {
               <div className="flex items-center space-x-2">
                 <BookOpen className="h-8 w-8 text-primary" />
                 <div>
-                  <p className="text-2xl font-bold">147</p>
+                  <p className="text-2xl font-bold">{totalGrades}</p>
                   <p className="text-sm text-muted-foreground">Notes Saisies</p>
                 </div>
               </div>
@@ -114,7 +152,7 @@ const Grades = () => {
               <div className="flex items-center space-x-2">
                 <TrendingUp className="h-8 w-8 text-education-success" />
                 <div>
-                  <p className="text-2xl font-bold">14.3</p>
+                  <p className="text-2xl font-bold">{averageGrade.toFixed(1)}</p>
                   <p className="text-sm text-muted-foreground">Moyenne Générale</p>
                 </div>
               </div>
@@ -126,7 +164,7 @@ const Grades = () => {
               <div className="flex items-center space-x-2">
                 <Users className="h-8 w-8 text-education-accent" />
                 <div>
-                  <p className="text-2xl font-bold">92%</p>
+                  <p className="text-2xl font-bold">{Math.round(passRate)}%</p>
                   <p className="text-sm text-muted-foreground">Taux de Réussite</p>
                 </div>
               </div>
@@ -138,7 +176,7 @@ const Grades = () => {
               <div className="flex items-center space-x-2">
                 <FileText className="h-8 w-8 text-education-secondary" />
                 <div>
-                  <p className="text-2xl font-bold">28</p>
+                  <p className="text-2xl font-bold">0</p>
                   <p className="text-sm text-muted-foreground">Bulletins Générés</p>
                 </div>
               </div>
@@ -154,13 +192,13 @@ const Grades = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {gradeStats.map((stat, index) => (
+                {subjectStats.map((stat, index) => (
                   <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center space-x-3">
                       <BookOpen className="h-5 w-5 text-primary" />
                       <div>
                         <p className="font-medium">{stat.subject}</p>
-                        <p className="text-sm text-muted-foreground">{stat.students} élèves</p>
+                        <p className="text-sm text-muted-foreground">{stat.count} notes</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -170,6 +208,11 @@ const Grades = () => {
                     </div>
                   </div>
                 ))}
+                {subjectStats.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">
+                    Aucune note trouvée pour les filtres sélectionnés
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -181,11 +224,11 @@ const Grades = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {recentGrades.map((grade, index) => (
+                {filteredGrades.slice(0, 10).map((grade, index) => (
                   <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
                     <div>
-                      <p className="font-medium text-sm">{grade.student}</p>
-                      <p className="text-xs text-muted-foreground">{grade.subject}</p>
+                      <p className="font-medium text-sm">{grade.student_name}</p>
+                      <p className="text-xs text-muted-foreground">{grade.subject_name}</p>
                     </div>
                     <div className="text-right">
                       <Badge className={getGradeBadge(grade.grade)}>
@@ -197,10 +240,85 @@ const Grades = () => {
                     </div>
                   </div>
                 ))}
+                {filteredGrades.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">
+                    Aucune note récente
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Grades Table */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle>Liste des Notes ({filteredGrades.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Élève</TableHead>
+                    <TableHead>Classe</TableHead>
+                    <TableHead>Matière</TableHead>
+                    <TableHead>Évaluation</TableHead>
+                    <TableHead>Note</TableHead>
+                    <TableHead>Coefficient</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredGrades.map((grade) => (
+                    <TableRow key={grade.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">{grade.student_name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{grade.class_name}</Badge>
+                      </TableCell>
+                      <TableCell>{grade.subject_name}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{grade.type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getGradeBadge(grade.grade)}>
+                          {grade.grade}/20
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{grade.coefficient}</TableCell>
+                      <TableCell>{new Date(grade.date).toLocaleDateString('fr-FR')}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteGrade(grade.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {filteredGrades.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Aucune note trouvée.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );

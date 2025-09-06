@@ -6,15 +6,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Eye, Edit, Trash2, UserPlus } from "lucide-react";
 import { useStudentsContext } from "@/contexts/StudentsContext";
+import { AddStudentForm } from "@/components/forms/AddStudentForm";
 import { useState } from "react";
 
 const Students = () => {
-  const { students, deleteStudent } = useStudentsContext();
+  const { students, loading, deleteStudent } = useStudentsContext();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const filteredStudents = students.filter(student =>
-    student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.class.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -31,8 +33,13 @@ const Students = () => {
     }
   };
 
+  if (loading) {
+    return <Layout><div className="flex items-center justify-center h-64">Chargement...</div></Layout>;
+  }
+
   return (
     <Layout>
+      {showAddForm && <AddStudentForm onClose={() => setShowAddForm(false)} />}
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -42,7 +49,7 @@ const Students = () => {
               Gérez les informations de tous les élèves de l'école
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button onClick={() => setShowAddForm(true)} className="bg-primary hover:bg-primary/90">
             <UserPlus className="mr-2 h-4 w-4" />
             Nouvel Élève
           </Button>
@@ -91,13 +98,13 @@ const Students = () => {
                   {filteredStudents.map((student) => (
                     <TableRow key={student.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">
-                        {student.firstName} {student.lastName}
+                        {student.first_name} {student.last_name}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{student.class}</Badge>
                       </TableCell>
-                      <TableCell>{student.parentName}</TableCell>
-                      <TableCell>{student.parentPhone}</TableCell>
+                      <TableCell>{student.parent_name}</TableCell>
+                      <TableCell>{student.parent_phone}</TableCell>
                       <TableCell>{getStatusBadge(student.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
