@@ -19,11 +19,6 @@ const Auth = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
 
-  // Redirect if already authenticated
-  if (user && !loading) {
-    return <Navigate to="/" replace />;
-  }
-
   const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
@@ -37,6 +32,11 @@ const Auth = () => {
     lastName: "",
     role: "secretariat" as UserRole,
   });
+
+  // Redirect if already authenticated
+  if (user && !loading) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
