@@ -10,20 +10,28 @@ import { AddStudentForm } from "@/components/forms/AddStudentForm";
 import { EditStudentForm } from "@/components/forms/EditStudentForm";
 import { ViewStudentModal } from "@/components/forms/ViewStudentModal";
 import { exportToPDF, exportToCSV } from "@/utils/exportUtils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 
 const Students = () => {
   const { students, loading, deleteStudent } = useStudentsContext();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedClass, setSelectedClass] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [viewingStudent, setViewingStudent] = useState<any>(null);
 
-  const filteredStudents = students.filter(student =>
-    student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.class.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const classes = ['Maternelle 1', 'Maternelle 2', 'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
+
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.class.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesClass = selectedClass === "all" || student.class === selectedClass;
+    
+    return matchesSearch && matchesClass;
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -73,7 +81,7 @@ const Students = () => {
 
   return (
     <Layout>
-      {showAddForm && <AddStudentForm onClose={() => setShowAddForm(false)} />}
+      {showAddForm && <AddStudentForm onClose={() => setShowAddForm(false)} defaultClass={selectedClass !== "all" ? selectedClass : undefined} />}
       {editingStudent && <EditStudentForm student={editingStudent} onClose={() => setEditingStudent(null)} />}
       {viewingStudent && <ViewStudentModal student={viewingStudent} onClose={() => setViewingStudent(null)} />}
       <div className="space-y-6 animate-fade-in">
@@ -82,7 +90,7 @@ const Students = () => {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Gestion des Élèves</h1>
             <p className="text-muted-foreground">
-              Gérez les informations de tous les élèves de l'école
+              Organisation par classe pour une meilleure gestion
             </p>
           </div>
           <div className="flex gap-2">
@@ -96,6 +104,32 @@ const Students = () => {
             </Button>
           </div>
         </div>
+
+        {/* Class Selection */}
+        <Card className="shadow-soft">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-64">
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une classe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les classes</SelectItem>
+                    {classes.map((className) => (
+                      <SelectItem key={className} value={className}>
+                        {className}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Badge variant="outline" className="text-sm">
+                {selectedClass === "all" ? "Toutes les classes" : selectedClass}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Search and Filter */}
         <Card className="shadow-soft">

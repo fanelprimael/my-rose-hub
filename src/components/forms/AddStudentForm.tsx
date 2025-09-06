@@ -9,18 +9,19 @@ import { X } from "lucide-react";
 
 interface AddStudentFormProps {
   onClose: () => void;
+  defaultClass?: string;
 }
 
 const CLASSES = ['Maternelle 1', 'Maternelle 2', 'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
 
-export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onClose }) => {
+export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onClose, defaultClass }) => {
   const { addStudent } = useStudentsContext();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     date_of_birth: '',
     gender: '',
-    class: '',
+    class: defaultClass || '',
     parent_name: '',
     parent_phone: '',
     parent_email: '',
