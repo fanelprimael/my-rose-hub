@@ -7,42 +7,81 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign, CreditCard, TrendingUp, AlertCircle, Plus, Search, Filter, Eye, Edit, Trash2, Download } from "lucide-react";
 import { usePaymentsContext } from "@/contexts/PaymentsContext";
+import { useStudentsContext } from "@/contexts/StudentsContext";
 import { AddPaymentForm } from "@/components/forms/AddPaymentForm";
+import { ViewStudentPaymentsModal } from "@/components/forms/ViewStudentPaymentsModal";
+import { EditStudentPaymentsForm } from "@/components/forms/EditStudentPaymentsForm";
 import { useState } from "react";
 
 const Finances = () => {
-  const { payments, loading, deletePayment } = usePaymentsContext();
+  const { payments, loading } = usePaymentsContext();
+  const { students } = useStudentsContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
 
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = payment.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.type.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !selectedStatus || selectedStatus === "all" || payment.status === selectedStatus;
-    return matchesSearch && matchesStatus;
+  // Group students with their payments
+  const studentsWithPayments = students.map(student => {
+    const studentPayments = payments.filter(payment => payment.student_id === student.id);
+    const filteredPayments = studentPayments.filter(payment => {
+      const matchesSearch = payment.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           payment.type.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = !selectedStatus || selectedStatus === "all" || payment.status === selectedStatus;
+      return matchesSearch && matchesStatus;
+    });
+    
+    const totalAmount = studentPayments.reduce((sum, payment) => sum + payment.amount, 0);
+    const totalPaid = studentPayments.filter(p => p.status === 'Payé').reduce((sum, payment) => sum + payment.amount, 0);
+    
+    return {
+      ...student,
+      paymentCount: filteredPayments.length,
+      totalAmount,
+      totalPaid,
+      hasPayments: studentPayments.length > 0
+    };
+  }).filter(student => {
+    if (searchTerm) {
+      const studentPayments = payments.filter(p => p.student_id === student.id);
+      return studentPayments.some(payment => 
+        payment.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        payment.type.toLowerCase().includes(searchTerm.toLowerCase())
+      ) || student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.last_name.toLowerCase().includes(searchTerm.toLowerCase());
+    }
+    return true;
   });
 
-  // Calculate statistics
+  // Calculate statistics from all payments
   const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const totalPaid = payments.reduce((sum, payment) => sum + (payment.amount_paid || 0), 0);
+  const totalPaid = payments.filter(p => p.status === 'Payé').reduce((sum, payment) => sum + payment.amount, 0);
   const totalPending = totalAmount - totalPaid;
   const paidPayments = payments.filter(p => p.status === 'Payé').length;
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Payé':
-        return <Badge className="bg-education-success/10 text-education-success hover:bg-education-success/20">Payé</Badge>;
-      case 'Partiel':
-        return <Badge className="bg-education-warning/10 text-education-warning hover:bg-education-warning/20">Partiel</Badge>;
-      case 'En attente':
-        return <Badge className="bg-education-danger/10 text-education-danger hover:bg-education-danger/20">En attente</Badge>;
-      case 'En retard':
-        return <Badge variant="destructive">En retard</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  const handleViewStudent = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setShowViewModal(true);
   };
+
+  const handleEditStudent = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setShowEditForm(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+    setSelectedStudentId("");
+  };
+
+  const handleCloseEditForm = () => {
+    setShowEditForm(false);
+    setSelectedStudentId("");
+  };
+
+  const selectedStudent = students.find(s => s.id === selectedStudentId);
 
   if (loading) {
     return <Layout><div className="flex items-center justify-center h-64">Chargement...</div></Layout>;
@@ -155,76 +194,75 @@ const Finances = () => {
         {/* Payments Table */}
         <Card className="shadow-soft">
           <CardHeader>
-            <CardTitle>Historique des Paiements ({filteredPayments.length})</CardTitle>
+            <CardTitle>Liste des Élèves ({studentsWithPayments.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Élève</TableHead>
+                    <TableHead>ID Élève</TableHead>
+                    <TableHead>Nom de l'élève</TableHead>
                     <TableHead>Classe</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Payé</TableHead>
-                    <TableHead>Reste</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredPayments.map((payment) => {
-                    const remaining = payment.amount - (payment.amount_paid || 0);
-                    
-                    return (
-                      <TableRow key={payment.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{payment.student_name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{payment.class_name}</Badge>
-                        </TableCell>
-                        <TableCell>{payment.type}</TableCell>
-                        <TableCell className="font-medium">{payment.amount.toLocaleString()} FCFA</TableCell>
-                        <TableCell className="text-education-success">
-                          {(payment.amount_paid || 0).toLocaleString()} FCFA
-                        </TableCell>
-                        <TableCell className={remaining > 0 ? "text-education-danger" : "text-education-success"}>
-                          {remaining.toLocaleString()} FCFA
-                        </TableCell>
-                        <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                        <TableCell>{new Date(payment.date).toLocaleDateString('fr-FR')}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deletePayment(payment.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {studentsWithPayments.map((student) => (
+                    <TableRow key={student.id} className="hover:bg-muted/50">
+                      <TableCell className="font-mono text-sm">{student.id.slice(0, 8)}</TableCell>
+                      <TableCell className="font-medium">{student.first_name} {student.last_name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{student.class}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewStudent(student.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Voir
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditStudent(student.id)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Modifier
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
 
-            {filteredPayments.length === 0 && (
+            {studentsWithPayments.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                <p>Aucun paiement trouvé.</p>
+                <p>Aucun élève trouvé.</p>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Forms and Modals */}
+        {showAddForm && <AddPaymentForm onClose={() => setShowAddForm(false)} />}
+
+        {showViewModal && selectedStudent && (
+          <ViewStudentPaymentsModal
+            studentId={selectedStudentId}
+            studentName={`${selectedStudent.first_name} ${selectedStudent.last_name}`}
+            studentClass={selectedStudent.class}
+            onClose={handleCloseViewModal}
+            onEdit={() => {
+              setShowViewModal(false);
+              handleEditStudent(selectedStudentId);
+            }}
+          />
+        )}
+
+        {showEditForm && selectedStudent && (
+          <EditStudentPaymentsForm
+            studentId={selectedStudentId}
+            onClose={handleCloseEditForm}
+          />
+        )}
       </div>
     </Layout>
   );

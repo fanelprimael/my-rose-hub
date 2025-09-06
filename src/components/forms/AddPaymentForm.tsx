@@ -29,7 +29,6 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({ onClose }) => {
     student_id: '',
     type: '',
     amount: '',
-    amount_paid: '0',
     status: 'En attente',
     date: new Date().toISOString().split('T')[0],
     due_date: ''
@@ -38,12 +37,6 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({ onClose }) => {
 
   const handleInputChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const calculateStatus = (amount: number, amountPaid: number) => {
-    if (amountPaid === 0) return 'En attente';
-    if (amountPaid >= amount) return 'Payé';
-    return 'Partiel';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,8 +48,6 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({ onClose }) => {
       if (!selectedStudent) return;
 
       const amount = parseInt(formData.amount);
-      const amountPaid = parseInt(formData.amount_paid);
-      const status = calculateStatus(amount, amountPaid);
 
       await addPayment({
         student_id: formData.student_id,
@@ -64,8 +55,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({ onClose }) => {
         class_name: selectedStudent.class,
         type: formData.type,
         amount,
-        amount_paid: amountPaid,
-        status,
+        status: formData.status,
         date: formData.date,
         due_date: formData.due_date || undefined
       });
@@ -120,7 +110,7 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({ onClose }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="amount">Montant Total (FCFA) *</Label>
+                <Label htmlFor="amount">Montant (FCFA) *</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -131,15 +121,18 @@ export const AddPaymentForm: React.FC<AddPaymentFormProps> = ({ onClose }) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount_paid">Montant Payé (FCFA) *</Label>
-                <Input
-                  id="amount_paid"
-                  type="number"
-                  min="0"
-                  value={formData.amount_paid}
-                  onChange={(e) => handleInputChange('amount_paid', e.target.value)}
-                  required
-                />
+                <Label htmlFor="status">Statut *</Label>
+                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner le statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="En attente">En attente</SelectItem>
+                    <SelectItem value="Payé">Payé</SelectItem>
+                    <SelectItem value="Partiel">Partiel</SelectItem>
+                    <SelectItem value="En retard">En retard</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

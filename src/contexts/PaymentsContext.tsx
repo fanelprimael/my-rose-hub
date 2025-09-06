@@ -9,7 +9,6 @@ export interface Payment {
   class_name: string;
   type: string;
   amount: number;
-  amount_paid?: number;
   status: string;
   date: string;
   due_date?: string;
@@ -21,6 +20,7 @@ interface PaymentsContextType {
   payments: Payment[];
   loading: boolean;
   addPayment: (payment: Omit<Payment, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateStudentPayments: (studentId: string, payments: Omit<Payment, 'id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
   updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
   getPayment: (id: string) => Payment | undefined;
@@ -53,13 +53,7 @@ export const PaymentsProvider: React.FC<{ children: ReactNode }> = ({ children }
         return;
       }
 
-      // Calculate amount_paid if not stored (but it doesn't exist in DB)
-      const paymentsWithCalculated = (data || []).map(payment => ({
-        ...payment,
-        amount_paid: 0 // Default value since it's not in the DB schema
-      }));
-
-      setPayments(paymentsWithCalculated);
+      setPayments(data || []);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -95,6 +89,57 @@ export const PaymentsProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast({
         title: "Succès",
         description: "Paiement ajouté avec succès"
+      });
+      
+      await refreshPayments();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateStudentPayments = async (studentId: string, paymentsData: Omit<Payment, 'id' | 'created_at' | 'updated_at'>[]) => {
+    try {
+      // D'abord, supprimer tous les paiements existants pour cet élève
+      const { error: deleteError } = await supabase
+        .from('payments')
+        .delete()
+        .eq('student_id', studentId);
+
+      if (deleteError) {
+        console.error('Error deleting existing payments:', deleteError);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer les anciens paiements",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Ensuite, insérer les nouveaux paiements
+      if (paymentsData.length > 0) {
+        const { error: insertError } = await supabase
+          .from('payments')
+          .insert(paymentsData);
+
+        if (insertError) {
+          console.error('Error inserting new payments:', insertError);
+          toast({
+            title: "Erreur",
+            description: "Impossible d'ajouter les nouveaux paiements",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+
+      toast({
+        title: "Succès",
+        description: "Paiements mis à jour avec succès"
       });
       
       await refreshPayments();
@@ -187,6 +232,7 @@ export const PaymentsProvider: React.FC<{ children: ReactNode }> = ({ children }
       payments,
       loading,
       addPayment,
+      updateStudentPayments,
       updatePayment,
       deletePayment,
       getPayment,
