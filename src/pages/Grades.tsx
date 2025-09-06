@@ -242,71 +242,37 @@ const Grades = () => {
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Subject Averages */}
-          <Card className="shadow-soft lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Moyennes par Matière</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {subjectStats.map((stat, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center space-x-3">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">{stat.subject}</p>
-                        <p className="text-sm text-muted-foreground">{stat.count} notes</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-lg font-bold ${getGradeColor(stat.average)}`}>
-                        {stat.average}/20
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {subjectStats.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">
-                    Aucune note trouvée pour les filtres sélectionnés
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Grades */}
-          <Card className="shadow-soft">
-            <CardHeader>
-              <CardTitle>Notes Récentes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {allFilteredGrades.slice(0, 10).map((grade, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+        {/* Subject Averages */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle>Moyennes par Matière</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {subjectStats.map((stat, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center space-x-3">
+                    <BookOpen className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="font-medium text-sm">{grade.student_name}</p>
-                      <p className="text-xs text-muted-foreground">{grade.subject_name}</p>
-                    </div>
-                    <div className="text-right">
-                      <Badge className={`${getGradeColor(grade.grade)} font-medium`}>
-                        {grade.grade}/20
-                      </Badge>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(grade.date).toLocaleDateString('fr-FR')}
-                      </p>
+                      <p className="font-medium">{stat.subject}</p>
+                      <p className="text-sm text-muted-foreground">{stat.count} notes</p>
                     </div>
                   </div>
-                ))}
-                {allFilteredGrades.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">
-                    Aucune note récente
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  <div className="text-right">
+                    <p className={`text-lg font-bold ${getGradeColor(stat.average)}`}>
+                      {stat.average}/20
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {subjectStats.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  Aucune note trouvée pour les filtres sélectionnés
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Students Table */}
         <Card className="shadow-soft">
