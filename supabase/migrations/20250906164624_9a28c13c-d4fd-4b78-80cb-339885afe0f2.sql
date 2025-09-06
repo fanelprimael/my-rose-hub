@@ -14,7 +14,7 @@ INSERT INTO auth.users (
   gen_random_uuid(),
   '00000000-0000-0000-0000-000000000000',
   'secretariat@roseraie.com',
-  crypt('55555555', gen_salt('bf')),
+  crypt('12345678', gen_salt('bf')),
   now(),
   now(),
   now(),
