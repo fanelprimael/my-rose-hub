@@ -28,8 +28,6 @@ export const ViewStudentPaymentsModal: React.FC<ViewStudentPaymentsModalProps> =
     switch (status) {
       case 'Payé':
         return "bg-education-success/10 text-education-success hover:bg-education-success/20";
-      case 'Partiel':
-        return "bg-education-warning/10 text-education-warning hover:bg-education-warning/20";
       case 'En attente':
         return "bg-education-danger/10 text-education-danger hover:bg-education-danger/20";
       case 'En retard':

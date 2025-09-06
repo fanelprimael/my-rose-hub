@@ -215,7 +215,6 @@ export const EditStudentPaymentsForm: React.FC<EditStudentPaymentsFormProps> = (
                         <SelectContent>
                           <SelectItem value="En attente">En attente</SelectItem>
                           <SelectItem value="Payé">Payé</SelectItem>
-                          <SelectItem value="Partiel">Partiel</SelectItem>
                           <SelectItem value="En retard">En retard</SelectItem>
                         </SelectContent>
                       </Select>
