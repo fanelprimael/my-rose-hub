@@ -5,6 +5,10 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { useSchoolYearsContext } from "@/contexts/SchoolYearsContext";
 import { 
   Settings as SettingsIcon, 
   School, 
@@ -16,7 +20,165 @@ import {
   Save
 } from "lucide-react";
 
+interface SchoolSettings {
+  id?: string;
+  name: string;
+  type: string;
+  address: string;
+  phone: string;
+  email: string;
+  school_year: string;
+  currency: string;
+  email_notifications: boolean;
+  maintenance_mode: boolean;
+}
+
 const Settings = () => {
+  const { toast } = useToast();
+  const { currentSchoolYear } = useSchoolYearsContext();
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('school');
+  
+  // États pour les paramètres
+  const [schoolSettings, setSchoolSettings] = useState<SchoolSettings>({
+    name: "La Roseraie",
+    type: "École Privée",
+    address: "123 Avenue de l'Éducation, Dakar, Sénégal",
+    phone: "+221 33 123 4567",
+    email: "contact@laroseraie.sn",
+    school_year: currentSchoolYear?.name || "2025-2026",
+    currency: "FCFA",
+    email_notifications: true,
+    maintenance_mode: false
+  });
+
+  // États pour les paramètres académiques
+  const [academicSettings, setAcademicSettings] = useState({
+    gradingScale: true,
+    automaticReports: true,
+    twoFactorAuth: false,
+    actionAudit: true,
+    autoBackup: true
+  });
+
+  // États pour les notifications
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    absenceAlerts: true,
+    paymentReminders: false
+  });
+
+  // Charger les paramètres depuis la base de données
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('school_settings')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading settings:', error);
+        return;
+      }
+
+      if (data) {
+        setSchoolSettings(prev => ({
+          ...prev,
+          id: data.id,
+          name: data.name || prev.name,
+          type: data.type || prev.type,
+          address: data.address || prev.address,
+          phone: data.phone || prev.phone,
+          email: data.email || prev.email,
+          school_year: data.school_year || currentSchoolYear?.name || prev.school_year,
+          currency: data.currency || prev.currency,
+          email_notifications: data.email_notifications,
+          maintenance_mode: data.maintenance_mode
+        }));
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveSettings = async () => {
+    try {
+      setLoading(true);
+      
+      const settingsData = {
+        name: schoolSettings.name,
+        type: schoolSettings.type,
+        address: schoolSettings.address,
+        phone: schoolSettings.phone,
+        email: schoolSettings.email,
+        school_year: schoolSettings.school_year,
+        currency: schoolSettings.currency,
+        email_notifications: schoolSettings.email_notifications,
+        maintenance_mode: schoolSettings.maintenance_mode
+      };
+
+      let error;
+      
+      if (schoolSettings.id) {
+        // Mise à jour
+        const result = await supabase
+          .from('school_settings')
+          .update(settingsData)
+          .eq('id', schoolSettings.id);
+        error = result.error;
+      } else {
+        // Insertion
+        const result = await supabase
+          .from('school_settings')
+          .insert([settingsData]);
+        error = result.error;
+      }
+
+      if (error) {
+        console.error('Error saving settings:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de sauvegarder les paramètres",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Paramètres sauvegardés avec succès"
+      });
+      
+      // Recharger les paramètres pour obtenir l'ID si c'était une insertion
+      await loadSettings();
+      
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSchoolSetting = (field: keyof SchoolSettings, value: string | boolean) => {
+    setSchoolSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -28,9 +190,13 @@ const Settings = () => {
               Configuration générale du système
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button 
+            onClick={saveSettings}
+            disabled={loading}
+            className="bg-primary hover:bg-primary/90"
+          >
             <Save className="mr-2 h-4 w-4" />
-            Sauvegarder
+            {loading ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>
         </div>
 
@@ -44,23 +210,43 @@ const Settings = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="ghost" className="w-full justify-start">
+              <Button 
+                variant={activeTab === 'school' ? 'default' : 'ghost'} 
+                className="w-full justify-start"
+                onClick={() => setActiveTab('school')}
+              >
                 <School className="mr-2 h-4 w-4" />
                 École
               </Button>
-              <Button variant="ghost" className="w-full justify-start">
+              <Button 
+                variant={activeTab === 'users' ? 'default' : 'ghost'} 
+                className="w-full justify-start"
+                onClick={() => setActiveTab('users')}
+              >
                 <Users className="mr-2 h-4 w-4" />
                 Utilisateurs
               </Button>
-              <Button variant="ghost" className="w-full justify-start">
+              <Button 
+                variant={activeTab === 'notifications' ? 'default' : 'ghost'} 
+                className="w-full justify-start"
+                onClick={() => setActiveTab('notifications')}
+              >
                 <Bell className="mr-2 h-4 w-4" />
                 Notifications
               </Button>
-              <Button variant="ghost" className="w-full justify-start">
+              <Button 
+                variant={activeTab === 'security' ? 'default' : 'ghost'} 
+                className="w-full justify-start"
+                onClick={() => setActiveTab('security')}
+              >
                 <Shield className="mr-2 h-4 w-4" />
                 Sécurité
               </Button>
-              <Button variant="ghost" className="w-full justify-start">
+              <Button 
+                variant={activeTab === 'backup' ? 'default' : 'ghost'} 
+                className="w-full justify-start"
+                onClick={() => setActiveTab('backup')}
+              >
                 <Database className="mr-2 h-4 w-4" />
                 Sauvegarde
               </Button>
@@ -70,155 +256,295 @@ const Settings = () => {
           {/* Main Settings */}
           <div className="lg:col-span-2 space-y-6">
             {/* School Information */}
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <School className="h-5 w-5 text-primary" />
-                  Informations de l'École
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="school-name">Nom de l'École</Label>
-                    <Input id="school-name" defaultValue="La Roseraie" />
+            {activeTab === 'school' && (
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <School className="h-5 w-5 text-primary" />
+                    Informations de l'École
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="school-name">Nom de l'École</Label>
+                      <Input 
+                        id="school-name" 
+                        value={schoolSettings.name}
+                        onChange={(e) => updateSchoolSetting('name', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="school-type">Type d'Établissement</Label>
+                      <Input 
+                        id="school-type" 
+                        value={schoolSettings.type}
+                        onChange={(e) => updateSchoolSetting('type', e.target.value)}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="school-code">Code Établissement</Label>
-                    <Input id="school-code" defaultValue="LR2024" />
+                    <Label htmlFor="school-address">Adresse</Label>
+                    <Input 
+                      id="school-address" 
+                      value={schoolSettings.address}
+                      onChange={(e) => updateSchoolSetting('address', e.target.value)}
+                    />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="school-address">Adresse</Label>
-                  <Input id="school-address" defaultValue="123 Avenue de l'Éducation, Dakar, Sénégal" />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="school-phone">Téléphone</Label>
-                    <Input id="school-phone" defaultValue="+221 33 123 4567" />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="school-phone">Téléphone</Label>
+                      <Input 
+                        id="school-phone" 
+                        value={schoolSettings.phone}
+                        onChange={(e) => updateSchoolSetting('phone', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="school-email">Email</Label>
+                      <Input 
+                        id="school-email" 
+                        value={schoolSettings.email}
+                        onChange={(e) => updateSchoolSetting('email', e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="school-email">Email</Label>
-                    <Input id="school-email" defaultValue="contact@laroseraie.sn" />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="school-year">Année Scolaire</Label>
+                      <Input 
+                        id="school-year" 
+                        value={schoolSettings.school_year}
+                        onChange={(e) => updateSchoolSetting('school_year', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="currency">Devise</Label>
+                      <Input 
+                        id="currency" 
+                        value={schoolSettings.currency}
+                        onChange={(e) => updateSchoolSetting('currency', e.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Academic Settings */}
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle>Paramètres Académiques</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Année Scolaire</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Année scolaire actuelle
-                    </p>
+            {activeTab === 'school' && (
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle>Paramètres Académiques</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Année Scolaire Courante</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {currentSchoolYear?.name || 'Aucune année définie'}
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => window.location.href = '/school-years'}>
+                      Gérer les Années
+                    </Button>
                   </div>
-                  <Input className="w-32" defaultValue="2023-2024" />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Notation sur 20</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Utiliser le système de notation français
-                    </p>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Notation sur 20</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Utiliser le système de notation français
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={academicSettings.gradingScale}
+                      onCheckedChange={(checked) => 
+                        setAcademicSettings(prev => ({ ...prev, gradingScale: checked }))
+                      }
+                    />
                   </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Bulletins Automatiques</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Génération automatique des bulletins
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Bulletins Automatiques</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Génération automatique des bulletins
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={academicSettings.automaticReports}
+                      onCheckedChange={(checked) => 
+                        setAcademicSettings(prev => ({ ...prev, automaticReports: checked }))
+                      }
+                    />
                   </div>
-                  <Switch defaultChecked />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Notification Settings */}
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-primary" />
-                  Notifications
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Notifications Email</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Recevoir des notifications par email
-                    </p>
+            {activeTab === 'notifications' && (
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-primary" />
+                    Notifications
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Notifications Email</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Recevoir des notifications par email
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={schoolSettings.email_notifications}
+                      onCheckedChange={(checked) => updateSchoolSetting('email_notifications', checked)}
+                    />
                   </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Alertes Absence</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Alertes automatiques pour les absences
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Alertes Absence</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Alertes automatiques pour les absences
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={notificationSettings.absenceAlerts}
+                      onCheckedChange={(checked) => 
+                        setNotificationSettings(prev => ({ ...prev, absenceAlerts: checked }))
+                      }
+                    />
                   </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Rappels Paiement</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Rappels automatiques de paiement
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Rappels Paiement</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Rappels automatiques de paiement
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={notificationSettings.paymentReminders}
+                      onCheckedChange={(checked) => 
+                        setNotificationSettings(prev => ({ ...prev, paymentReminders: checked }))
+                      }
+                    />
                   </div>
-                  <Switch />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Security Settings */}
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  Sécurité
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Authentification à 2 Facteurs</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Sécurité renforcée pour les comptes
-                    </p>
+            {activeTab === 'security' && (
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Sécurité
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Mode Maintenance</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Désactiver l'accès au système temporairement
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={schoolSettings.maintenance_mode}
+                      onCheckedChange={(checked) => updateSchoolSetting('maintenance_mode', checked)}
+                    />
                   </div>
-                  <Switch />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Audit des Actions</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Enregistrer toutes les actions utilisateurs
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Authentification à 2 Facteurs</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Sécurité renforcée pour les comptes
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={academicSettings.twoFactorAuth}
+                      onCheckedChange={(checked) => 
+                        setAcademicSettings(prev => ({ ...prev, twoFactorAuth: checked }))
+                      }
+                    />
                   </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Sauvegarde Automatique</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Sauvegarde quotidienne des données
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Audit des Actions</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Enregistrer toutes les actions utilisateurs
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={academicSettings.actionAudit}
+                      onCheckedChange={(checked) => 
+                        setAcademicSettings(prev => ({ ...prev, actionAudit: checked }))
+                      }
+                    />
                   </div>
-                  <Switch defaultChecked />
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Sauvegarde Automatique</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Sauvegarde quotidienne des données
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={academicSettings.autoBackup}
+                      onCheckedChange={(checked) => 
+                        setAcademicSettings(prev => ({ ...prev, autoBackup: checked }))
+                      }
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Users Tab */}
+            {activeTab === 'users' && (
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    Gestion des Utilisateurs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-center py-8">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground mb-4">
+                    La gestion des utilisateurs sera disponible prochainement
+                  </p>
+                  <Button variant="outline" disabled>
+                    Fonctionnalité à venir
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Backup Tab */}
+            {activeTab === 'backup' && (
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Database className="h-5 w-5 text-primary" />
+                    Sauvegarde et Restauration
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-center py-8">
+                  <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground mb-4">
+                    Les outils de sauvegarde seront disponibles prochainement
+                  </p>
+                  <Button variant="outline" disabled>
+                    Fonctionnalité à venir
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
