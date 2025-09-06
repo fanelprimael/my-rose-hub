@@ -16,6 +16,7 @@ import { useState } from "react";
 const Finances = () => {
   const { payments, loading } = usePaymentsContext();
   const { students } = useStudentsContext();
+  const [selectedClass, setSelectedClass] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -23,7 +24,9 @@ const Finances = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
 
-  // Group students with their payments
+  const classes = ['Maternelle 1', 'Maternelle 2', 'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
+
+  // Group students with their payments, filtered by class
   const studentsWithPayments = students.map(student => {
     const studentPayments = payments.filter(payment => payment.student_id === student.id);
     const filteredPayments = studentPayments.filter(payment => {
@@ -44,7 +47,10 @@ const Finances = () => {
       hasPayments: studentPayments.length > 0
     };
   }).filter(student => {
-    if (searchTerm) {
+    // Filter by selected class first
+    const classMatch = (!selectedClass || selectedClass === "all" || student.class === selectedClass);
+    
+    if (searchTerm && classMatch) {
       const studentPayments = payments.filter(p => p.student_id === student.id);
       return studentPayments.some(payment => 
         payment.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,7 +58,7 @@ const Finances = () => {
       ) || student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
          student.last_name.toLowerCase().includes(searchTerm.toLowerCase());
     }
-    return true;
+    return classMatch;
   });
 
   // Calculate statistics from all payments
@@ -156,39 +162,68 @@ const Finances = () => {
           </Card>
         </div>
 
-        {/* Search and Filter */}
-        <Card className="shadow-soft">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Rechercher un paiement..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        {/* Class Selector and Search/Filter */}
+        <div className="space-y-4">
+          {/* Class Selection */}
+          <Card className="shadow-soft">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-64">
+                  <Select value={selectedClass} onValueChange={setSelectedClass}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une classe" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les classes</SelectItem>
+                      {classes.map((className) => (
+                        <SelectItem key={className} value={className}>
+                          {className}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Badge variant="outline" className="text-sm">
+                  {selectedClass === "all" ? "Toutes les classes" : selectedClass}
+                </Badge>
               </div>
-              <div className="w-48">
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filtrer par statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="Payé">Payé</SelectItem>
-                    <SelectItem value="En attente">En attente</SelectItem>
-                    <SelectItem value="En retard">En retard</SelectItem>
-                  </SelectContent>
-                </Select>
+            </CardContent>
+          </Card>
+
+          {/* Search and Status Filter */}
+          <Card className="shadow-soft">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Rechercher un élève ou un paiement..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="w-48">
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrer par statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les statuts</SelectItem>
+                      <SelectItem value="Payé">Payé</SelectItem>
+                      <SelectItem value="En attente">En attente</SelectItem>
+                      <SelectItem value="En retard">En retard</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  Exporter
+                </Button>
               </div>
-              <Button variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                Exporter
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Payments Table */}
         <Card className="shadow-soft">
