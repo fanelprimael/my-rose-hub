@@ -280,6 +280,226 @@ export const generatePaymentReceipt = (payment: any) => {
   }
 };
 
+export const generateClassicBulletin = (studentData: any, grades: any[], evaluation: string = 'Toutes évaluations') => {
+  // Group grades by subject
+  const subjectGrades = grades.reduce((acc: { [key: string]: any[] }, grade: any) => {
+    if (!acc[grade.subject_name]) {
+      acc[grade.subject_name] = [];
+    }
+    acc[grade.subject_name].push(grade);
+    return acc;
+  }, {} as { [key: string]: any[] });
+
+  // Calculate averages per subject (coefficient = 1 for all)
+  const subjectAverages = Object.entries(subjectGrades).map(([subject, subjectGradesList]) => {
+    const average = (subjectGradesList as any[]).reduce((sum: number, grade: any) => sum + grade.grade, 0) / (subjectGradesList as any[]).length;
+    return {
+      subject,
+      average: parseFloat(average.toFixed(2)),
+      grades: subjectGradesList as any[]
+    };
+  });
+
+  // Calculate overall average (simple: somme des moyennes / nombre de matières)
+  const overallAverage = subjectAverages.length > 0 ? 
+    subjectAverages.reduce((sum: number, subject: any) => sum + subject.average, 0) / subjectAverages.length : 0;
+
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Bulletin Classique - ${studentData.first_name} ${studentData.last_name}</title>
+      <style>
+        body { 
+          font-family: Arial, sans-serif; 
+          margin: 20px; 
+          line-height: 1.6;
+        }
+        .header { 
+          text-align: center; 
+          border-bottom: 3px solid #2563eb; 
+          padding-bottom: 20px; 
+          margin-bottom: 30px; 
+        }
+        .school-name { 
+          font-size: 28px; 
+          font-weight: bold; 
+          color: #2563eb; 
+          margin-bottom: 10px;
+        }
+        .bulletin-title { 
+          font-size: 20px; 
+          color: #333;
+          margin-bottom: 5px;
+        }
+        .student-info { 
+          background: #f8f9fa; 
+          padding: 20px; 
+          border-radius: 8px; 
+          margin-bottom: 30px;
+          border-left: 4px solid #2563eb;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 10px;
+        }
+        .info-label {
+          font-weight: bold;
+          color: #333;
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin: 30px 0; 
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td { 
+          border: 1px solid #ddd; 
+          padding: 12px 8px; 
+          text-align: center; 
+        }
+        th { 
+          background-color: #2563eb; 
+          color: white; 
+          font-weight: bold;
+          font-size: 14px;
+        }
+        .subject-column { 
+          text-align: left; 
+          font-weight: 500;
+          background-color: #f8f9fa;
+        }
+        .grade-cell {
+          font-weight: bold;
+          font-size: 14px;
+        }
+        .grade-excellent { color: #16a34a; }
+        .grade-good { color: #2563eb; }
+        .grade-average { color: #f59e0b; }
+        .grade-poor { color: #dc2626; }
+        .summary { 
+          background: linear-gradient(135deg, #2563eb, #1d4ed8); 
+          color: white;
+          padding: 20px; 
+          border-radius: 8px; 
+          margin: 30px 0; 
+          text-align: center;
+        }
+        .average-score {
+          font-size: 24px;
+          font-weight: bold;
+          margin: 10px 0;
+        }
+        .signature-section { 
+          margin-top: 60px; 
+          text-align: center;
+        }
+        .signature-line {
+          border-top: 2px solid #333;
+          margin: 60px auto 10px;
+          width: 200px;
+        }
+        .signature-label {
+          font-weight: bold;
+          color: #333;
+        }
+        .footer {
+          text-align: center;
+          margin-top: 40px;
+          font-size: 12px;
+          color: #666;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="school-name">École La Roseraie</div>
+        <div class="bulletin-title">Bulletin Classique</div>
+        <div style="font-size: 14px; color: #666;">Année Scolaire 2024-2025</div>
+      </div>
+
+      <div class="student-info">
+        <div class="info-row">
+          <span class="info-label">Nom et Prénom:</span>
+          <span>${studentData.first_name} ${studentData.last_name}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Classe:</span>
+          <span>${studentData.class}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Date de naissance:</span>
+          <span>${new Date(studentData.date_of_birth).toLocaleDateString('fr-FR')}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Date d'édition:</span>
+          <span>${new Date().toLocaleDateString('fr-FR')}</span>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: left;">Matières</th>
+            <th>Notes Obtenues</th>
+            <th>Moyenne</th>
+            <th>Coefficient</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${subjectAverages.map((subjectData: any) => {
+            const gradeClass = subjectData.average >= 16 ? 'grade-excellent' : 
+                              subjectData.average >= 12 ? 'grade-good' : 
+                              subjectData.average >= 10 ? 'grade-average' : 'grade-poor';
+            
+            const gradesText = (subjectData.grades as any[]).map((g: any) => `${g.grade}`).join(' - ');
+            
+            return `
+              <tr>
+                <td class="subject-column">${subjectData.subject}</td>
+                <td>${gradesText}</td>
+                <td class="grade-cell ${gradeClass}">${subjectData.average.toFixed(1)}/20</td>
+                <td>1</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+
+      <div class="summary">
+        <div style="font-size: 18px; margin-bottom: 10px;">Résultats</div>
+        <div class="average-score">${overallAverage.toFixed(2)}/20</div>
+        <div style="font-size: 16px;">Moyenne Générale</div>
+        <div style="margin-top: 15px; font-size: 14px;">
+          Mention: ${overallAverage >= 16 ? 'Très Bien' : 
+                     overallAverage >= 14 ? 'Bien' : 
+                     overallAverage >= 12 ? 'Assez Bien' : 
+                     overallAverage >= 10 ? 'Passable' : 'Insuffisant'}
+        </div>
+      </div>
+
+      <div class="signature-section">
+        <div class="signature-line"></div>
+        <div class="signature-label">Le Directeur / La Directrice</div>
+      </div>
+
+      <div class="footer">
+        Bulletin généré automatiquement le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}
+      </div>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+    setTimeout(() => printWindow.close(), 1000);
+  }
+};
+
 export const generateEvaluationBulletin = (studentData: any, grades: any[], evaluation: string) => {
   // Filter grades for the specific evaluation
   const evaluationGrades = grades.filter((grade: any) => grade.evaluation === evaluation);

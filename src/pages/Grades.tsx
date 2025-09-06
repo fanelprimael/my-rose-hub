@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, TrendingUp, Users, FileText, Plus, Eye, Edit, UserPlus } from "lucide-react";
+import { BookOpen, TrendingUp, Users, FileText, Plus, Eye, Edit, UserPlus, FileDown } from "lucide-react";
 import { useState } from "react";
 import { useGradesContext } from "@/contexts/GradesContext";
 import { useStudentsContext } from "@/contexts/StudentsContext";
 import { AddGradeForm } from "@/components/forms/AddGradeForm";
 import { AddMultipleGradesForm } from "@/components/forms/AddMultipleGradesForm";
 import { ViewStudentGradesModal } from "@/components/forms/ViewStudentGradesModal";
+import { generateClassicBulletin } from "@/utils/exportUtils";
 
 const Grades = () => {
   const { grades, loading } = useGradesContext();
@@ -80,6 +81,15 @@ const Grades = () => {
     setSelectedStudentId(studentId);
     setEditMode(true);
     setShowMultipleGradesForm(true);
+  };
+
+  const handleGenerateBulletin = (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    const studentGrades = grades.filter(grade => grade.student_id === studentId);
+    
+    if (student && studentGrades.length > 0) {
+      generateClassicBulletin(student, studentGrades);
+    }
   };
 
   const handleCloseModal = () => {
@@ -233,6 +243,15 @@ const Grades = () => {
                           <Button variant="ghost" size="sm" onClick={() => handleEditStudent(student.id)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Modifier
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleGenerateBulletin(student.id)}
+                            className="text-primary hover:text-primary/80"
+                          >
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Bulletin
                           </Button>
                         </div>
                       </TableCell>
