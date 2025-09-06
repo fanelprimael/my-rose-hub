@@ -567,3 +567,204 @@ export const generateEvaluationBulletin = (studentData: any, grades: any[], eval
     setTimeout(() => printWindow.close(), 1000);
   }
 };
+
+// Generate detailed financial summary report
+export const generateFinancialSummaryReport = (payments: any[], period: string = 'Général') => {
+  // Calculate totals by payment type
+  const paymentsByType = payments.reduce((acc: { [key: string]: { total: number, count: number } }, payment: any) => {
+    if (!acc[payment.type]) {
+      acc[payment.type] = { total: 0, count: 0 };
+    }
+    acc[payment.type].total += payment.amount;
+    acc[payment.type].count += 1;
+    return acc;
+  }, {});
+
+  // Calculate status summary
+  const statusSummary = payments.reduce((acc: { [key: string]: { total: number, count: number } }, payment: any) => {
+    if (!acc[payment.status]) {
+      acc[payment.status] = { total: 0, count: 0 };
+    }
+    acc[payment.status].total += payment.amount;
+    acc[payment.status].count += 1;
+    return acc;
+  }, {});
+
+  const totalAmount = payments.reduce((sum: number, payment: any) => sum + payment.amount, 0);
+
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Rapport Financier Détaillé</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .school-name { font-size: 24px; font-weight: bold; color: #2563eb; }
+        .report-title { font-size: 18px; margin-top: 10px; }
+        .summary-box { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .total-amount { text-align: center; font-size: 28px; font-weight: bold; color: #16a34a; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #2563eb; color: white; }
+        .amount { text-align: right; font-weight: bold; }
+        .section-title { font-size: 16px; font-weight: bold; margin: 30px 0 10px 0; color: #333; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="school-name">École La Roseraie</div>
+        <div class="report-title">Rapport Financier Détaillé - ${period}</div>
+        <div style="font-size: 12px; color: #666;">Généré le ${new Date().toLocaleDateString('fr-FR')}</div>
+      </div>
+
+      <div class="total-amount">
+        Montant Total: ${totalAmount.toLocaleString()} FCFA
+      </div>
+
+      <div class="section-title">Répartition par Type de Paiement</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Type de Paiement</th>
+            <th>Nombre de Paiements</th>
+            <th class="amount">Montant Total (FCFA)</th>
+            <th class="amount">Pourcentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.entries(paymentsByType).map(([type, data]: [string, any]) => `
+            <tr>
+              <td>${type}</td>
+              <td>${data.count}</td>
+              <td class="amount">${data.total.toLocaleString()}</td>
+              <td class="amount">${((data.total / totalAmount) * 100).toFixed(1)}%</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="section-title">Répartition par Statut</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Statut</th>
+            <th>Nombre de Paiements</th>
+            <th class="amount">Montant Total (FCFA)</th>
+            <th class="amount">Pourcentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.entries(statusSummary).map(([status, data]: [string, any]) => `
+            <tr>
+              <td>${status}</td>
+              <td>${data.count}</td>
+              <td class="amount">${data.total.toLocaleString()}</td>
+              <td class="amount">${((data.total / totalAmount) * 100).toFixed(1)}%</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+    setTimeout(() => printWindow.close(), 1000);
+  }
+};
+
+// Generate academic performance report
+export const generateAcademicPerformanceReport = (students: any[], grades: any[], period: string = 'Général') => {
+  const classPerformance = students.reduce((acc: { [key: string]: { students: number, totalGrades: number, totalPoints: number } }, student: any) => {
+    if (!acc[student.class]) {
+      acc[student.class] = { students: 0, totalGrades: 0, totalPoints: 0 };
+    }
+    
+    const studentGrades = grades.filter((grade: any) => grade.student_id === student.id);
+    const studentAverage = studentGrades.length > 0 
+      ? studentGrades.reduce((sum: number, grade: any) => sum + grade.grade, 0) / studentGrades.length 
+      : 0;
+
+    acc[student.class].students += 1;
+    acc[student.class].totalGrades += studentGrades.length;
+    acc[student.class].totalPoints += studentAverage;
+
+    return acc;
+  }, {});
+
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Rapport de Performance Académique</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .school-name { font-size: 24px; font-weight: bold; color: #2563eb; }
+        .report-title { font-size: 18px; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #2563eb; color: white; }
+        .class-name { text-align: left; font-weight: bold; }
+        .excellent { background-color: #dcfce7; color: #16a34a; }
+        .good { background-color: #dbeafe; color: #2563eb; }
+        .average { background-color: #fef3c7; color: #d97706; }
+        .poor { background-color: #fee2e2; color: #dc2626; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="school-name">École La Roseraie</div>
+        <div class="report-title">Rapport de Performance Académique - ${period}</div>
+        <div style="font-size: 12px; color: #666;">Généré le ${new Date().toLocaleDateString('fr-FR')}</div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Classe</th>
+            <th>Nombre d'Élèves</th>
+            <th>Total des Notes</th>
+            <th>Moyenne de Classe</th>
+            <th>Performance</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.entries(classPerformance).map(([className, data]: [string, any]) => {
+            const classAverage = data.students > 0 ? (data.totalPoints / data.students) : 0;
+            const performanceClass = classAverage >= 16 ? 'excellent' : 
+                                   classAverage >= 12 ? 'good' : 
+                                   classAverage >= 10 ? 'average' : 'poor';
+            const performanceText = classAverage >= 16 ? 'Excellent' : 
+                                  classAverage >= 12 ? 'Bon' : 
+                                  classAverage >= 10 ? 'Moyen' : 'Faible';
+            
+            return `
+              <tr>
+                <td class="class-name">${className}</td>
+                <td>${data.students}</td>
+                <td>${data.totalGrades}</td>
+                <td>${classAverage.toFixed(2)}/20</td>
+                <td class="${performanceClass}">${performanceText}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+    setTimeout(() => printWindow.close(), 1000);
+  }
+};
