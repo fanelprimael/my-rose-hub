@@ -12,6 +12,7 @@ export interface Payment {
   status: string;
   date: string;
   due_date?: string;
+  school_year_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -19,8 +20,8 @@ export interface Payment {
 interface PaymentsContextType {
   payments: Payment[];
   loading: boolean;
-  addPayment: (payment: Omit<Payment, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  updateStudentPayments: (studentId: string, payments: Omit<Payment, 'id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
+  addPayment: (payment: Omit<Payment, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => Promise<void>;
+  updateStudentPayments: (studentId: string, payments: Omit<Payment, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>[]) => Promise<void>;
   updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
   getPayment: (id: string) => Payment | undefined;
@@ -70,11 +71,27 @@ export const PaymentsProvider: React.FC<{ children: ReactNode }> = ({ children }
     refreshPayments();
   }, []);
 
-  const addPayment = async (paymentData: Omit<Payment, 'id' | 'created_at' | 'updated_at'>) => {
+  const addPayment = async (paymentData: Omit<Payment, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => {
     try {
+      // Get current school year
+      const { data: currentYear } = await supabase
+        .from('school_years')
+        .select('id')
+        .eq('is_current', true)
+        .single();
+
+      if (!currentYear) {
+        toast({
+          title: "Erreur",
+          description: "Aucune année scolaire courante trouvée",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('payments')
-        .insert([paymentData]);
+        .insert([{ ...paymentData, school_year_id: currentYear.id }]);
 
       if (error) {
         console.error('Error adding payment:', error);
@@ -102,13 +119,30 @@ export const PaymentsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-  const updateStudentPayments = async (studentId: string, paymentsData: Omit<Payment, 'id' | 'created_at' | 'updated_at'>[]) => {
+  const updateStudentPayments = async (studentId: string, paymentsData: Omit<Payment, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>[]) => {
     try {
-      // D'abord, supprimer tous les paiements existants pour cet élève
+      // Get current school year
+      const { data: currentYear } = await supabase
+        .from('school_years')
+        .select('id')
+        .eq('is_current', true)
+        .single();
+
+      if (!currentYear) {
+        toast({
+          title: "Erreur",
+          description: "Aucune année scolaire courante trouvée",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // D'abord, supprimer tous les paiements existants pour cet élève dans l'année courante
       const { error: deleteError } = await supabase
         .from('payments')
         .delete()
-        .eq('student_id', studentId);
+        .eq('student_id', studentId)
+        .eq('school_year_id', currentYear.id);
 
       if (deleteError) {
         console.error('Error deleting existing payments:', deleteError);
@@ -122,9 +156,14 @@ export const PaymentsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
       // Ensuite, insérer les nouveaux paiements
       if (paymentsData.length > 0) {
+        const paymentsWithSchoolYear = paymentsData.map(payment => ({
+          ...payment,
+          school_year_id: currentYear.id
+        }));
+
         const { error: insertError } = await supabase
           .from('payments')
-          .insert(paymentsData);
+          .insert(paymentsWithSchoolYear);
 
         if (insertError) {
           console.error('Error inserting new payments:', insertError);

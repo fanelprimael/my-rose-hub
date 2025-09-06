@@ -14,6 +14,7 @@ export interface Grade {
   type: string;
   evaluation: string;
   date: string;
+  school_year_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -21,9 +22,9 @@ export interface Grade {
 interface GradesContextType {
   grades: Grade[];
   loading: boolean;
-  addGrade: (grade: Omit<Grade, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  addMultipleGrades: (grades: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
-  updateStudentGrades: (studentId: string, evaluation: string, type: string, grades: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
+  addGrade: (grade: Omit<Grade, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => Promise<void>;
+  addMultipleGrades: (grades: Omit<Grade, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>[]) => Promise<void>;
+  updateStudentGrades: (studentId: string, evaluation: string, type: string, grades: Omit<Grade, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>[]) => Promise<void>;
   updateGrade: (id: string, grade: Partial<Grade>) => Promise<void>;
   deleteGrade: (id: string) => Promise<void>;
   getGrade: (id: string) => Grade | undefined;
@@ -74,11 +75,27 @@ export const GradesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     refreshGrades();
   }, []);
 
-  const addGrade = async (gradeData: Omit<Grade, 'id' | 'created_at' | 'updated_at'>) => {
+  const addGrade = async (gradeData: Omit<Grade, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => {
     try {
+      // Get current school year
+      const { data: currentYear } = await supabase
+        .from('school_years')
+        .select('id')
+        .eq('is_current', true)
+        .single();
+
+      if (!currentYear) {
+        toast({
+          title: "Erreur",
+          description: "Aucune année scolaire courante trouvée",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('grades')
-        .insert([gradeData]);
+        .insert([{ ...gradeData, school_year_id: currentYear.id }]);
 
       if (error) {
         console.error('Error adding grade:', error);
@@ -106,11 +123,33 @@ export const GradesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const addMultipleGrades = async (gradesData: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => {
+  const addMultipleGrades = async (gradesData: Omit<Grade, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>[]) => {
     try {
+      // Get current school year
+      const { data: currentYear } = await supabase
+        .from('school_years')
+        .select('id')
+        .eq('is_current', true)
+        .single();
+
+      if (!currentYear) {
+        toast({
+          title: "Erreur",
+          description: "Aucune année scolaire courante trouvée",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Add school_year_id to all grades
+      const gradesWithSchoolYear = gradesData.map(grade => ({
+        ...grade,
+        school_year_id: currentYear.id
+      }));
+
       const { error } = await supabase
         .from('grades')
-        .insert(gradesData);
+        .insert(gradesWithSchoolYear);
 
       if (error) {
         console.error('Error adding grades:', error);
@@ -138,15 +177,32 @@ export const GradesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const updateStudentGrades = async (studentId: string, evaluation: string, type: string, gradesData: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => {
+  const updateStudentGrades = async (studentId: string, evaluation: string, type: string, gradesData: Omit<Grade, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>[]) => {
     try {
-      // D'abord, supprimer toutes les notes existantes pour cet élève, évaluation et type
+      // Get current school year
+      const { data: currentYear } = await supabase
+        .from('school_years')
+        .select('id')
+        .eq('is_current', true)
+        .single();
+
+      if (!currentYear) {
+        toast({
+          title: "Erreur",
+          description: "Aucune année scolaire courante trouvée",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // D'abord, supprimer toutes les notes existantes pour cet élève, évaluation et type dans l'année courante
       const { error: deleteError } = await supabase
         .from('grades')
         .delete()
         .eq('student_id', studentId)
         .eq('evaluation', evaluation)
-        .eq('type', type);
+        .eq('type', type)
+        .eq('school_year_id', currentYear.id);
 
       if (deleteError) {
         console.error('Error deleting existing grades:', deleteError);
@@ -160,9 +216,14 @@ export const GradesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       // Ensuite, insérer les nouvelles notes
       if (gradesData.length > 0) {
+        const gradesWithSchoolYear = gradesData.map(grade => ({
+          ...grade,
+          school_year_id: currentYear.id
+        }));
+
         const { error: insertError } = await supabase
           .from('grades')
-          .insert(gradesData);
+          .insert(gradesWithSchoolYear);
 
         if (insertError) {
           console.error('Error inserting new grades:', insertError);

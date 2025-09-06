@@ -12,6 +12,7 @@ import Grades from "./pages/Grades";
 import Finances from "./pages/Finances";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import SchoolYearManagement from "./pages/SchoolYearManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/grades" element={<Grades />} />
             <Route path="/finances" element={<Finances />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/school-years" element={<SchoolYearManagement />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

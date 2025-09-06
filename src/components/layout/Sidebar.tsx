@@ -10,7 +10,8 @@ import {
   FileText,
   Settings,
   Menu,
-  X
+  X,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Notes", href: "/grades", icon: BookOpen },
   { name: "Finances", href: "/finances", icon: CreditCard },
   { name: "Rapports", href: "/reports", icon: FileText },
+  { name: "Années Scolaires", href: "/school-years", icon: Calendar },
   { name: "Paramètres", href: "/settings", icon: Settings },
 ];
 

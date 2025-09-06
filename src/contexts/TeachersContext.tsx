@@ -12,6 +12,7 @@ export interface Teacher {
   classes: string[];
   status: string;
   hire_date?: string;
+  school_year_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -19,7 +20,7 @@ export interface Teacher {
 interface TeachersContextType {
   teachers: Teacher[];
   loading: boolean;
-  addTeacher: (teacher: Omit<Teacher, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addTeacher: (teacher: Omit<Teacher, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => Promise<void>;
   updateTeacher: (id: string, teacher: Partial<Teacher>) => Promise<void>;
   deleteTeacher: (id: string) => Promise<void>;
   getTeacher: (id: string) => Teacher | undefined;
@@ -68,11 +69,27 @@ export const TeachersProvider: React.FC<{ children: ReactNode }> = ({ children }
     refreshTeachers();
   }, []);
 
-  const addTeacher = async (teacherData: Omit<Teacher, 'id' | 'created_at' | 'updated_at'>) => {
+  const addTeacher = async (teacherData: Omit<Teacher, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => {
     try {
+      // Get current school year
+      const { data: currentYear } = await supabase
+        .from('school_years')
+        .select('id')
+        .eq('is_current', true)
+        .single();
+
+      if (!currentYear) {
+        toast({
+          title: "Erreur",
+          description: "Aucune année scolaire courante trouvée",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('teachers')
-        .insert([teacherData]);
+        .insert([{ ...teacherData, school_year_id: currentYear.id }]);
 
       if (error) {
         console.error('Error adding teacher:', error);

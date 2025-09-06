@@ -9,6 +9,7 @@ export interface SchoolClass {
   capacity: number;
   student_count: number;
   teacher: string;
+  school_year_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -16,7 +17,7 @@ export interface SchoolClass {
 interface ClassesContextType {
   classes: SchoolClass[];
   loading: boolean;
-  addClass: (classData: Omit<SchoolClass, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addClass: (classData: Omit<SchoolClass, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => Promise<void>;
   updateClass: (id: string, classData: Partial<SchoolClass>) => Promise<void>;
   deleteClass: (id: string) => Promise<void>;
   getClass: (id: string) => SchoolClass | undefined;
@@ -65,11 +66,27 @@ export const ClassesProvider: React.FC<{ children: ReactNode }> = ({ children })
     refreshClasses();
   }, []);
 
-  const addClass = async (classData: Omit<SchoolClass, 'id' | 'created_at' | 'updated_at'>) => {
+  const addClass = async (classData: Omit<SchoolClass, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => {
     try {
+      // Get current school year
+      const { data: currentYear } = await supabase
+        .from('school_years')
+        .select('id')
+        .eq('is_current', true)
+        .single();
+
+      if (!currentYear) {
+        toast({
+          title: "Erreur",
+          description: "Aucune année scolaire courante trouvée",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('classes')
-        .insert([classData]);
+        .insert([{ ...classData, school_year_id: currentYear.id }]);
 
       if (error) {
         console.error('Error adding class:', error);

@@ -15,6 +15,7 @@ export interface Student {
   parent_email: string;
   address: string;
   status: string;
+  school_year_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -22,7 +23,7 @@ export interface Student {
 interface StudentsContextType {
   students: Student[];
   loading: boolean;
-  addStudent: (student: Omit<Student, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addStudent: (student: Omit<Student, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => Promise<void>;
   updateStudent: (id: string, student: Partial<Student>) => Promise<void>;
   deleteStudent: (id: string) => Promise<void>;
   getStudent: (id: string) => Student | undefined;
@@ -71,11 +72,27 @@ export const StudentsProvider: React.FC<{ children: ReactNode }> = ({ children }
     refreshStudents();
   }, []);
 
-  const addStudent = async (studentData: Omit<Student, 'id' | 'created_at' | 'updated_at'>) => {
+  const addStudent = async (studentData: Omit<Student, 'id' | 'created_at' | 'updated_at' | 'school_year_id'>) => {
     try {
+      // Get current school year
+      const { data: currentYear } = await supabase
+        .from('school_years')
+        .select('id')
+        .eq('is_current', true)
+        .single();
+
+      if (!currentYear) {
+        toast({
+          title: "Erreur",
+          description: "Aucune année scolaire courante trouvée",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('students')
-        .insert([studentData]);
+        .insert([{ ...studentData, school_year_id: currentYear.id }]);
 
       if (error) {
         console.error('Error adding student:', error);
