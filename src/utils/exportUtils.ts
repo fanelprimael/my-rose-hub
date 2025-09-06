@@ -75,12 +75,12 @@ export const exportToCSV = (data: any[], filename: string, headers: string[]) =>
   document.body.removeChild(link);
 };
 
-export const generateBulletin = (studentData: any, grades: any[]) => {
+export const generateBulletin = (studentData: any, grades: any[], evaluation: string = 'Evaluation 1') => {
   const printContent = `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Bulletin de ${studentData.first_name} ${studentData.last_name}</title>
+      <title>Bulletin de ${studentData.first_name} ${studentData.last_name} - ${evaluation}</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
@@ -104,14 +104,15 @@ export const generateBulletin = (studentData: any, grades: any[]) => {
     <body>
       <div class="header">
         <div class="school-name">École La Roseraie</div>
-        <div class="bulletin-title">Bulletin Scolaire</div>
+        <div class="bulletin-title">Bulletin Scolaire - ${evaluation}</div>
       </div>
 
       <div class="student-info">
         <div class="info-box">
           <strong>Élève:</strong> ${studentData.first_name} ${studentData.last_name}<br>
           <strong>Classe:</strong> ${studentData.class}<br>
-          <strong>Année Scolaire:</strong> 2024-2025
+          <strong>Année Scolaire:</strong> 2024-2025<br>
+          <strong>Évaluation:</strong> ${evaluation}
         </div>
         <div class="info-box">
           <strong>Date de naissance:</strong> ${new Date(studentData.date_of_birth).toLocaleDateString('fr-FR')}<br>
@@ -275,6 +276,169 @@ export const generatePaymentReceipt = (payment: any) => {
     printWindow.document.write(printContent);
     printWindow.document.close();
     printWindow.print();
+    setTimeout(() => printWindow.close(), 1000);
+  }
+};
+
+export const generateEvaluationBulletin = (studentData: any, grades: any[], evaluation: string) => {
+  // Filter grades for the specific evaluation
+  const evaluationGrades = grades.filter((grade: any) => grade.evaluation === evaluation);
+  
+  // Group grades by subject
+  const subjectGrades = evaluationGrades.reduce((acc: { [key: string]: any[] }, grade: any) => {
+    if (!acc[grade.subject_name]) {
+      acc[grade.subject_name] = [];
+    }
+    acc[grade.subject_name].push(grade);
+    return acc;
+  }, {} as { [key: string]: any[] });
+
+  // Calculate averages per subject
+  const subjectAverages = Object.entries(subjectGrades).map(([subject, subjectGradesList]) => {
+    const average = (subjectGradesList as any[]).reduce((sum: number, grade: any) => sum + grade.grade, 0) / (subjectGradesList as any[]).length;
+    const coefficient = (subjectGradesList[0] as any)?.coefficient || 1;
+    return {
+      subject,
+      average: parseFloat(average.toFixed(2)),
+      coefficient,
+      points: parseFloat((average * coefficient).toFixed(2)),
+      grades: subjectGradesList as any[]
+    };
+  });
+
+  // Calculate overall average
+  const totalPoints = subjectAverages.reduce((sum: number, subject: any) => sum + subject.points, 0);
+  const totalCoefficients = subjectAverages.reduce((sum: number, subject: any) => sum + subject.coefficient, 0);
+  const overallAverage = totalCoefficients > 0 ? totalPoints / totalCoefficients : 0;
+
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Bulletin ${evaluation} - ${studentData.first_name} ${studentData.last_name}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .school-name { font-size: 24px; font-weight: bold; color: #2563eb; }
+        .bulletin-title { font-size: 18px; margin-top: 10px; }
+        .student-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .info-box { background: #f8f9fa; padding: 10px; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #2563eb; color: white; }
+        .subject { text-align: left; }
+        .grade-excellent { color: #16a34a; font-weight: bold; }
+        .grade-good { color: #2563eb; font-weight: bold; }
+        .grade-average { color: #f59e0b; font-weight: bold; }
+        .grade-poor { color: #dc2626; font-weight: bold; }
+        .summary { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; }
+        .signature-section { display: flex; justify-content: space-between; margin-top: 40px; }
+        .signature-box { text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="school-name">École La Roseraie</div>
+        <div class="bulletin-title">Bulletin - ${evaluation}</div>
+      </div>
+
+      <div class="student-info">
+        <div class="info-box">
+          <strong>Élève:</strong> ${studentData.first_name} ${studentData.last_name}<br>
+          <strong>Classe:</strong> ${studentData.class}<br>
+          <strong>Évaluation:</strong> ${evaluation}
+        </div>
+        <div class="info-box">
+          <strong>Date de naissance:</strong> ${new Date(studentData.date_of_birth).toLocaleDateString('fr-FR')}<br>
+          <strong>Genre:</strong> ${studentData.gender || 'Non spécifié'}<br>
+          <strong>Date d'édition:</strong> ${new Date().toLocaleDateString('fr-FR')}
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="subject">Matière</th>
+            <th>Notes</th>
+            <th>Moyenne</th>
+            <th>Coefficient</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${subjectAverages.map((subjectData: any) => {
+            const gradeClass = subjectData.average >= 16 ? 'grade-excellent' : 
+                              subjectData.average >= 12 ? 'grade-good' : 
+                              subjectData.average >= 10 ? 'grade-average' : 'grade-poor';
+            
+            const gradesText = (subjectData.grades as any[]).map((g: any) => `${g.grade}/20 (${g.type})`).join(', ');
+            
+            return `
+              <tr>
+                <td class="subject">${subjectData.subject}</td>
+                <td>${gradesText}</td>
+                <td class="${gradeClass}">${subjectData.average.toFixed(1)}/20</td>
+                <td>${subjectData.coefficient}</td>
+                <td class="${gradeClass}">${subjectData.points.toFixed(1)}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+
+      <div class="summary">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>Moyenne Générale: ${overallAverage.toFixed(2)}/20</strong>
+          </div>
+          <div>
+            <strong>Mentions:</strong> 
+            ${overallAverage >= 16 ? 'Très Bien' : 
+              overallAverage >= 14 ? 'Bien' : 
+              overallAverage >= 12 ? 'Assez Bien' : 
+              overallAverage >= 10 ? 'Passable' : 'Insuffisant'}
+          </div>
+        </div>
+        <br>
+        <div>
+          <strong>Observations:</strong><br>
+          ${overallAverage >= 14 ? 'Excellent travail ! Continuez ainsi.' : 
+            overallAverage >= 12 ? 'Bon travail, peut mieux faire.' : 
+            overallAverage >= 10 ? 'Travail correct, des efforts sont nécessaires.' : 
+            'Des efforts importants sont nécessaires pour progresser.'}
+        </div>
+      </div>
+
+      <div class="signature-section">
+        <div class="signature-box">
+          <br><br>
+          <hr style="width: 150px;">
+          <p>Signature du Professeur</p>
+        </div>
+        <div class="signature-box">
+          <br><br>
+          <hr style="width: 150px;">
+          <p>Signature du Directeur</p>
+        </div>
+        <div class="signature-box">
+          <br><br>
+          <hr style="width: 150px;">
+          <p>Signature des Parents</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+    
     setTimeout(() => printWindow.close(), 1000);
   }
 };

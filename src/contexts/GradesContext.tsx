@@ -12,6 +12,7 @@ export interface Grade {
   grade: number;
   coefficient: number;
   type: string;
+  evaluation: string;
   date: string;
   created_at: string;
   updated_at: string;
@@ -21,10 +22,12 @@ interface GradesContextType {
   grades: Grade[];
   loading: boolean;
   addGrade: (grade: Omit<Grade, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addMultipleGrades: (grades: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
   updateGrade: (id: string, grade: Partial<Grade>) => Promise<void>;
   deleteGrade: (id: string) => Promise<void>;
   getGrade: (id: string) => Grade | undefined;
   getGradesByStudent: (studentId: string) => Grade[];
+  getGradesByEvaluation: (evaluation: string) => Grade[];
   refreshGrades: () => Promise<void>;
 }
 
@@ -89,6 +92,38 @@ export const GradesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       toast({
         title: "Succès",
         description: "Note ajoutée avec succès"
+      });
+      
+      await refreshGrades();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const addMultipleGrades = async (gradesData: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => {
+    try {
+      const { error } = await supabase
+        .from('grades')
+        .insert(gradesData);
+
+      if (error) {
+        console.error('Error adding grades:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible d'ajouter les notes",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: `${gradesData.length} notes ajoutées avec succès`
       });
       
       await refreshGrades();
@@ -176,15 +211,21 @@ export const GradesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return grades.filter(grade => grade.student_id === studentId);
   };
 
+  const getGradesByEvaluation = (evaluation: string) => {
+    return grades.filter(grade => grade.evaluation === evaluation);
+  };
+
   return (
     <GradesContext.Provider value={{
       grades,
       loading,
       addGrade,
+      addMultipleGrades,
       updateGrade,
       deleteGrade,
       getGrade,
       getGradesByStudent,
+      getGradesByEvaluation,
       refreshGrades
     }}>
       {children}

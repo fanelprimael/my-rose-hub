@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, TrendingUp, Users, FileText, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { BookOpen, TrendingUp, Users, FileText, Plus, Eye, Edit, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useGradesContext } from "@/contexts/GradesContext";
 import { AddGradeForm } from "@/components/forms/AddGradeForm";
+import { AddMultipleGradesForm } from "@/components/forms/AddMultipleGradesForm";
 
 const Grades = () => {
   const { grades, loading, deleteGrade } = useGradesContext();
@@ -15,6 +16,7 @@ const Grades = () => {
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [selectedEvaluation, setSelectedEvaluation] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showMultipleGradesForm, setShowMultipleGradesForm] = useState(false);
 
   const classes = ['Maternelle 1', 'Maternelle 2', 'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
   const subjects = ['ANGLAIS', 'ES', 'EST', 'EA', 'MATHÉMATIQUES', 'LECTURE', 'EXPRESSION ÉCRITE', 'POÉSIE/CHANT'];
@@ -24,7 +26,7 @@ const Grades = () => {
   const filteredGrades = grades.filter(grade => {
     return (!selectedClass || selectedClass === "all" || grade.class_name === selectedClass) &&
            (!selectedSubject || selectedSubject === "all" || grade.subject_name === selectedSubject) &&
-           (!selectedEvaluation || selectedEvaluation === "all" || grade.type === selectedEvaluation);
+           (!selectedEvaluation || selectedEvaluation === "all" || grade.evaluation === selectedEvaluation);
   });
 
   // Calculate statistics
@@ -66,7 +68,6 @@ const Grades = () => {
 
   return (
     <Layout>
-      {showAddForm && <AddGradeForm onClose={() => setShowAddForm(false)} />}
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -76,10 +77,16 @@ const Grades = () => {
               Saisie et suivi des évaluations des élèves
             </p>
           </div>
-          <Button onClick={() => setShowAddForm(true)} className="bg-primary hover:bg-primary/90">
-            <Plus className="mr-2 h-4 w-4" />
-            Nouvelle Note
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowAddForm(true)} variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              Note Simple
+            </Button>
+            <Button onClick={() => setShowMultipleGradesForm(true)} className="bg-primary hover:bg-primary/90">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Saisie par Élève
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -125,7 +132,14 @@ const Grades = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button variant="outline">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  const { generateEvaluationBulletin } = require('@/utils/exportUtils');
+                  // This will need to be implemented with a student/evaluation selector
+                  console.log('Generate bulletin for evaluation:', selectedEvaluation);
+                }}
+              >
                 <FileText className="mr-2 h-4 w-4" />
                 Générer Bulletin
               </Button>
@@ -319,6 +333,15 @@ const Grades = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Forms */}
+        {showAddForm && (
+          <AddGradeForm onClose={() => setShowAddForm(false)} />
+        )}
+
+        {showMultipleGradesForm && (
+          <AddMultipleGradesForm onClose={() => setShowMultipleGradesForm(false)} />
+        )}
       </div>
     </Layout>
   );

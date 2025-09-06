@@ -23,7 +23,8 @@ export const AddGradeForm: React.FC<AddGradeFormProps> = ({ onClose }) => {
     subject_name: '',
     grade: '',
     coefficient: '1',
-    type: '',
+    type: 'DS',
+    evaluation: 'Evaluation 1',
     date: new Date().toISOString().split('T')[0]
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +49,7 @@ export const AddGradeForm: React.FC<AddGradeFormProps> = ({ onClose }) => {
         grade: parseFloat(formData.grade),
         coefficient: parseInt(formData.coefficient),
         type: formData.type,
+        evaluation: formData.evaluation,
         date: formData.date
       });
       onClose();
@@ -100,8 +102,8 @@ export const AddGradeForm: React.FC<AddGradeFormProps> = ({ onClose }) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">Évaluation *</Label>
-              <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
+              <Label htmlFor="evaluation">Évaluation *</Label>
+              <Select value={formData.evaluation} onValueChange={(value) => handleInputChange('evaluation', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner une évaluation" />
                 </SelectTrigger>
@@ -109,6 +111,23 @@ export const AddGradeForm: React.FC<AddGradeFormProps> = ({ onClose }) => {
                   {EVALUATIONS.map((evaluation) => (
                     <SelectItem key={evaluation} value={evaluation}>{evaluation}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Type *</Label>
+              <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DS">Devoir Surveillé</SelectItem>
+                  <SelectItem value="Interrogation">Interrogation</SelectItem>
+                  <SelectItem value="Examen">Examen</SelectItem>
+                  <SelectItem value="Devoir">Devoir</SelectItem>
+                  <SelectItem value="Controle">Contrôle</SelectItem>
+                  <SelectItem value="Evaluation">Évaluation</SelectItem>
                 </SelectContent>
               </Select>
             </div>

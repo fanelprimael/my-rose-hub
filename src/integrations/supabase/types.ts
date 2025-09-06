@@ -53,6 +53,7 @@ export type Database = {
           coefficient: number
           created_at: string
           date: string
+          evaluation: string
           grade: number
           id: string
           student_id: string
@@ -67,6 +68,7 @@ export type Database = {
           coefficient?: number
           created_at?: string
           date: string
+          evaluation?: string
           grade: number
           id?: string
           student_id: string
@@ -81,6 +83,7 @@ export type Database = {
           coefficient?: number
           created_at?: string
           date?: string
+          evaluation?: string
           grade?: number
           id?: string
           student_id?: string
