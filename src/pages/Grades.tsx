@@ -4,41 +4,67 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, TrendingUp, Users, FileText, Plus, Eye, Edit, Trash2, UserPlus } from "lucide-react";
+import { BookOpen, TrendingUp, Users, FileText, Plus, Eye, Edit, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useGradesContext } from "@/contexts/GradesContext";
+import { useStudentsContext } from "@/contexts/StudentsContext";
 import { AddGradeForm } from "@/components/forms/AddGradeForm";
 import { AddMultipleGradesForm } from "@/components/forms/AddMultipleGradesForm";
+import { ViewStudentGradesModal } from "@/components/forms/ViewStudentGradesModal";
 
 const Grades = () => {
-  const { grades, loading, deleteGrade } = useGradesContext();
+  const { grades, loading } = useGradesContext();
+  const { students } = useStudentsContext();
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [selectedEvaluation, setSelectedEvaluation] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
   const [showMultipleGradesForm, setShowMultipleGradesForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [editMode, setEditMode] = useState(false);
 
   const classes = ['Maternelle 1', 'Maternelle 2', 'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
   const subjects = ['LECTURE', 'EXPRESSION ECRITE', 'EA(DESSIN)', 'ES', 'EST', 'MATHEMATIQUES', 'POESIE/CHANT', 'ANGLAIS'];
   const evaluations = ['Evaluation 1', 'Evaluation 2', 'Evaluation 3', 'Evaluation 4', 'Evaluation 5'];
 
-  // Filter grades based on selections
-  const filteredGrades = grades.filter(grade => {
+  // Group students with their grades
+  const studentsWithGrades = students.map(student => {
+    const studentGrades = grades.filter(grade => grade.student_id === student.id);
+    const filteredStudentGrades = studentGrades.filter(grade => {
+      return (!selectedClass || selectedClass === "all" || grade.class_name === selectedClass) &&
+             (!selectedSubject || selectedSubject === "all" || grade.subject_name === selectedSubject) &&
+             (!selectedEvaluation || selectedEvaluation === "all" || grade.evaluation === selectedEvaluation);
+    });
+    
+    return {
+      ...student,
+      gradeCount: filteredStudentGrades.length,
+      averageGrade: filteredStudentGrades.length > 0 
+        ? filteredStudentGrades.reduce((sum, grade) => sum + grade.grade, 0) / filteredStudentGrades.length 
+        : 0,
+      hasGrades: studentGrades.length > 0
+    };
+  }).filter(student => {
+    return (!selectedClass || selectedClass === "all" || student.class === selectedClass);
+  });
+
+  // Calculate statistics from all filtered grades
+  const allFilteredGrades = grades.filter(grade => {
     return (!selectedClass || selectedClass === "all" || grade.class_name === selectedClass) &&
            (!selectedSubject || selectedSubject === "all" || grade.subject_name === selectedSubject) &&
            (!selectedEvaluation || selectedEvaluation === "all" || grade.evaluation === selectedEvaluation);
   });
-
-  // Calculate statistics
-  const totalGrades = filteredGrades.length;
+  
+  const totalGrades = allFilteredGrades.length;
   const averageGrade = totalGrades > 0 ? 
-    filteredGrades.reduce((sum, grade) => sum + grade.grade, 0) / totalGrades : 0;
+    allFilteredGrades.reduce((sum, grade) => sum + grade.grade, 0) / totalGrades : 0;
   const passRate = totalGrades > 0 ? 
-    (filteredGrades.filter(grade => grade.grade >= 10).length / totalGrades) * 100 : 0;
+    (allFilteredGrades.filter(grade => grade.grade >= 10).length / totalGrades) * 100 : 0;
 
   // Calculate subject averages
   const subjectStats = subjects.map(subject => {
-    const subjectGrades = filteredGrades.filter(grade => grade.subject_name === subject);
+    const subjectGrades = allFilteredGrades.filter(grade => grade.subject_name === subject);
     const average = subjectGrades.length > 0 ?
       subjectGrades.reduce((sum, grade) => sum + grade.grade, 0) / subjectGrades.length : 0;
     return {
@@ -55,12 +81,30 @@ const Grades = () => {
     return "text-education-danger";
   };
 
-  const getGradeBadge = (grade: number) => {
-    if (grade >= 16) return "bg-education-success/10 text-education-success hover:bg-education-success/20";
-    if (grade >= 12) return "bg-education-secondary/10 text-education-secondary hover:bg-education-secondary/20";
-    if (grade >= 10) return "bg-education-warning/10 text-education-warning hover:bg-education-warning/20";
-    return "bg-education-danger/10 text-education-danger hover:bg-education-danger/20";
+  const handleViewStudent = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setShowViewModal(true);
+    setEditMode(false);
   };
+
+  const handleEditStudent = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setEditMode(true);
+    setShowMultipleGradesForm(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowViewModal(false);
+    setSelectedStudentId("");
+  };
+
+  const handleCloseEditForm = () => {
+    setShowMultipleGradesForm(false);
+    setSelectedStudentId("");
+    setEditMode(false);
+  };
+
+  const selectedStudent = students.find(s => s.id === selectedStudentId);
 
   if (loading) {
     return <Layout><div className="flex items-center justify-center h-64">Chargement...</div></Layout>;
@@ -77,12 +121,12 @@ const Grades = () => {
               Saisie et suivi des évaluations des élèves
             </p>
           </div>
-          <div className="flex gap-2">
+            <div className="flex gap-2">
             <Button onClick={() => setShowAddForm(true)} variant="outline">
               <Plus className="mr-2 h-4 w-4" />
               Note Simple
             </Button>
-            <Button onClick={() => setShowMultipleGradesForm(true)} className="bg-primary hover:bg-primary/90">
+            <Button onClick={() => { setEditMode(false); setShowMultipleGradesForm(true); }} className="bg-primary hover:bg-primary/90">
               <UserPlus className="mr-2 h-4 w-4" />
               Saisie par Élève
             </Button>
@@ -238,14 +282,14 @@ const Grades = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {filteredGrades.slice(0, 10).map((grade, index) => (
+                {allFilteredGrades.slice(0, 10).map((grade, index) => (
                   <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
                     <div>
                       <p className="font-medium text-sm">{grade.student_name}</p>
                       <p className="text-xs text-muted-foreground">{grade.subject_name}</p>
                     </div>
                     <div className="text-right">
-                      <Badge className={getGradeBadge(grade.grade)}>
+                      <Badge className={`${getGradeColor(grade.grade)} font-medium`}>
                         {grade.grade}/20
                       </Badge>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -254,7 +298,7 @@ const Grades = () => {
                     </div>
                   </div>
                 ))}
-                {filteredGrades.length === 0 && (
+                {allFilteredGrades.length === 0 && (
                   <p className="text-center text-muted-foreground py-8">
                     Aucune note récente
                   </p>
@@ -264,59 +308,51 @@ const Grades = () => {
           </Card>
         </div>
 
-        {/* Grades Table */}
+        {/* Students Table */}
         <Card className="shadow-soft">
           <CardHeader>
-            <CardTitle>Liste des Notes ({filteredGrades.length})</CardTitle>
+            <CardTitle>Liste des Élèves ({studentsWithGrades.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Élève</TableHead>
+                    <TableHead>ID Élève</TableHead>
+                    <TableHead>Nom de l'élève</TableHead>
                     <TableHead>Classe</TableHead>
-                    <TableHead>Matière</TableHead>
-                    <TableHead>Évaluation</TableHead>
-                    <TableHead>Note</TableHead>
-                    <TableHead>Coefficient</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Nombre de notes</TableHead>
+                    <TableHead>Moyenne</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredGrades.map((grade) => (
-                    <TableRow key={grade.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{grade.student_name}</TableCell>
+                  {studentsWithGrades.map((student) => (
+                    <TableRow key={student.id} className="hover:bg-muted/50">
+                      <TableCell className="font-mono text-sm">{student.id.slice(0, 8)}</TableCell>
+                      <TableCell className="font-medium">{student.first_name} {student.last_name}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{grade.class_name}</Badge>
-                      </TableCell>
-                      <TableCell>{grade.subject_name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{grade.type}</Badge>
+                        <Badge variant="outline">{student.class}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getGradeBadge(grade.grade)}>
-                          {grade.grade}/20
-                        </Badge>
+                        <Badge variant="secondary">{student.gradeCount} notes</Badge>
                       </TableCell>
-                      <TableCell>{grade.coefficient}</TableCell>
-                      <TableCell>{new Date(grade.date).toLocaleDateString('fr-FR')}</TableCell>
+                      <TableCell>
+                        {student.gradeCount > 0 ? (
+                          <span className={getGradeColor(student.averageGrade)}>
+                            {student.averageGrade.toFixed(1)}/20
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewStudent(student.id)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditStudent(student.id)}>
                             <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteGrade(grade.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -326,21 +362,38 @@ const Grades = () => {
               </Table>
             </div>
 
-            {filteredGrades.length === 0 && (
+            {studentsWithGrades.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                <p>Aucune note trouvée.</p>
+                <p>Aucun élève trouvé.</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Forms */}
+        {/* Forms and Modals */}
         {showAddForm && (
           <AddGradeForm onClose={() => setShowAddForm(false)} />
         )}
 
         {showMultipleGradesForm && (
-          <AddMultipleGradesForm onClose={() => setShowMultipleGradesForm(false)} />
+          <AddMultipleGradesForm 
+            onClose={handleCloseEditForm} 
+            studentId={editMode ? selectedStudentId : undefined}
+            editMode={editMode}
+          />
+        )}
+
+        {showViewModal && selectedStudent && (
+          <ViewStudentGradesModal
+            studentId={selectedStudentId}
+            studentName={`${selectedStudent.first_name} ${selectedStudent.last_name}`}
+            studentClass={selectedStudent.class}
+            onClose={handleCloseModal}
+            onEdit={() => {
+              setShowViewModal(false);
+              handleEditStudent(selectedStudentId);
+            }}
+          />
         )}
       </div>
     </Layout>

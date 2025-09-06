@@ -17,14 +17,16 @@ interface Subject {
 
 interface AddMultipleGradesFormProps {
   onClose: () => void;
+  studentId?: string;
+  editMode?: boolean;
 }
 
-export const AddMultipleGradesForm: React.FC<AddMultipleGradesFormProps> = ({ onClose }) => {
+export const AddMultipleGradesForm: React.FC<AddMultipleGradesFormProps> = ({ onClose, studentId, editMode = false }) => {
   const { students } = useStudents();
-  const { addMultipleGrades } = useGradesContext();
+  const { addMultipleGrades, getGradesByStudent } = useGradesContext();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [formData, setFormData] = useState({
-    student_id: '',
+    student_id: studentId || '',
     evaluation: 'Evaluation 1',
     type: 'DS',
     date: new Date().toISOString().split('T')[0]
@@ -35,6 +37,31 @@ export const AddMultipleGradesForm: React.FC<AddMultipleGradesFormProps> = ({ on
   useEffect(() => {
     fetchSubjects();
   }, []);
+
+  // Load existing grades if in edit mode
+  useEffect(() => {
+    if (editMode && studentId) {
+      const existingGrades = getGradesByStudent(studentId);
+      const gradesBySubject: { [subjectId: string]: string } = {};
+      
+      existingGrades.forEach(grade => {
+        if (grade.subject_id) {
+          gradesBySubject[grade.subject_id] = grade.grade.toString();
+        }
+      });
+      
+      setGrades(prevGrades => ({ ...prevGrades, ...gradesBySubject }));
+      
+      // Set default evaluation and type from first existing grade
+      if (existingGrades.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          evaluation: existingGrades[0].evaluation,
+          type: existingGrades[0].type
+        }));
+      }
+    }
+  }, [editMode, studentId, getGradesByStudent]);
 
   const fetchSubjects = async () => {
     try {
@@ -120,7 +147,7 @@ export const AddMultipleGradesForm: React.FC<AddMultipleGradesFormProps> = ({ on
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Saisir les Notes par Élève</CardTitle>
+          <CardTitle>{editMode ? 'Modifier les Notes' : 'Saisir les Notes par Élève'}</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -130,7 +157,11 @@ export const AddMultipleGradesForm: React.FC<AddMultipleGradesFormProps> = ({ on
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="student">Élève</Label>
-                <Select value={formData.student_id} onValueChange={(value) => setFormData(prev => ({ ...prev, student_id: value }))}>
+                <Select 
+                  value={formData.student_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, student_id: value }))}
+                  disabled={editMode}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un élève" />
                   </SelectTrigger>
@@ -217,7 +248,7 @@ export const AddMultipleGradesForm: React.FC<AddMultipleGradesFormProps> = ({ on
                 Annuler
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Ajout en cours...' : 'Ajouter les Notes'}
+                {loading ? (editMode ? 'Modification en cours...' : 'Ajout en cours...') : (editMode ? 'Modifier les Notes' : 'Ajouter les Notes')}
               </Button>
             </div>
           </form>
