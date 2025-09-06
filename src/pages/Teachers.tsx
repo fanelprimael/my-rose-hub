@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Mail, Phone, Calendar, DollarSign, BookOpen, Users, UserPlus } from "lucide-react";
+import { Mail, Phone, Calendar, DollarSign, BookOpen, Users, UserPlus, Trash2 } from "lucide-react";
 import { useTeachersContext } from "@/contexts/TeachersContext";
 import { AddTeacherForm } from "@/components/forms/AddTeacherForm";
 import { ViewTeacherModal } from "@/components/forms/ViewTeacherModal";
@@ -11,7 +11,7 @@ import { EditTeacherForm } from "@/components/forms/EditTeacherForm";
 import { useState } from "react";
 
 const Teachers = () => {
-  const { teachers, loading } = useTeachersContext();
+  const { teachers, loading, deleteTeacher } = useTeachersContext();
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewingTeacher, setViewingTeacher] = useState<any>(null);
   const [editingTeacher, setEditingTeacher] = useState<any>(null);
@@ -26,6 +26,12 @@ const Teachers = () => {
 
   const formatSalary = (salary: number) => {
     return new Intl.NumberFormat('fr-FR').format(salary) + " FCFA";
+  };
+
+  const handleDeleteTeacher = async (teacher: any) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'enseignant ${teacher.first_name} ${teacher.last_name} ?`)) {
+      await deleteTeacher(teacher.id);
+    }
   };
 
   return (
@@ -167,13 +173,23 @@ const Teachers = () => {
                   >
                     Voir Profil
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setEditingTeacher(teacher)}
-                  >
-                    Modifier
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setEditingTeacher(teacher)}
+                    >
+                      Modifier
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDeleteTeacher(teacher)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
