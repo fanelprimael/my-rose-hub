@@ -1,0 +1,41 @@
+{
+  "name": "gestion-scolaire-roseraie-electron",
+  "version": "1.0.0",
+  "description": "Application Electron pour la gestion scolaire",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=never"
+  },
+  "dependencies": {
+    "electron": "^28.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^25.0.5"
+  },
+  "build": {
+    "appId": "com.roseraie.gestion-scolaire",
+    "productName": "Gestion Scolaire Roseraie",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "../dist/**/*",
+      "main.js",
+      "preload.js",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

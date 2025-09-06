@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { useSchoolYearsContext } from "@/contexts/SchoolYearsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import UserManagementModal from "@/components/forms/UserManagementModal";
+import { DataSyncPanel } from "@/components/sync/DataSyncPanel";
 import { 
   Settings as SettingsIcon, 
   School, 
@@ -563,46 +564,7 @@ const Settings = () => {
 
             {/* Backup Tab */}
             {activeTab === 'backup' && (
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5 text-primary" />
-                    Sauvegarde et Restauration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-green-50 rounded-full mb-4">
-                      <Database className="h-8 w-8 text-green-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">Sauvegarde et Restauration</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      Outils pour sauvegarder et restaurer les données de votre établissement scolaire en toute sécurité.
-                    </p>
-                    <div className="space-y-3">
-                      <div className="text-sm text-muted-foreground">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span>Sauvegarde automatique quotidienne</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span>Export des données en formats multiples</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span>Restauration sélective des données</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="border-t pt-4">
-                    <Button variant="outline" disabled className="w-full">
-                      Fonctionnalité à venir
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <DataSyncPanel />
             )}
           </div>
         </div>
