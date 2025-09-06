@@ -50,11 +50,11 @@ export const EditStudentForm: React.FC<EditStudentFormProps> = ({ student, onClo
     setIsSubmitting(true);
 
     try {
-      const age = formData.date_of_birth ? calculateAge(formData.date_of_birth) : undefined;
+      const age = formData.date_of_birth ? calculateAge(formData.date_of_birth) : null;
       await updateStudent(student.id, {
         ...formData,
         age,
-        gender: formData.gender as 'masculin' | 'feminin'
+        gender: formData.gender || null
       });
       onClose();
     } catch (error) {
@@ -96,7 +96,7 @@ export const EditStudentForm: React.FC<EditStudentFormProps> = ({ student, onClo
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date_of_birth">Date de Naissance *</Label>
                 <Input
@@ -105,6 +105,15 @@ export const EditStudentForm: React.FC<EditStudentFormProps> = ({ student, onClo
                   value={formData.date_of_birth}
                   onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
                   required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="age">Âge</Label>
+                <Input
+                  id="age"
+                  value={formData.date_of_birth ? `${calculateAge(formData.date_of_birth)} ans` : ''}
+                  disabled
+                  placeholder="Calculé automatiquement"
                 />
               </div>
               <div className="space-y-2">

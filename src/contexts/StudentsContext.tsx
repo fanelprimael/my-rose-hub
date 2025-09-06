@@ -8,7 +8,7 @@ export interface Student {
   last_name: string;
   date_of_birth: string;
   age?: number;
-  gender?: 'masculin' | 'feminin';
+  gender?: string;
   class: string;
   parent_name: string;
   parent_phone: string;

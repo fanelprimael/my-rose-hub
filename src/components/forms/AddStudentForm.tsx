@@ -49,11 +49,11 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onClose }) => {
     setIsSubmitting(true);
 
     try {
-      const age = formData.date_of_birth ? calculateAge(formData.date_of_birth) : undefined;
+      const age = formData.date_of_birth ? calculateAge(formData.date_of_birth) : null;
       await addStudent({
         ...formData,
         age,
-        gender: formData.gender as 'masculin' | 'feminin'
+        gender: formData.gender || null
       });
       onClose();
     } catch (error) {

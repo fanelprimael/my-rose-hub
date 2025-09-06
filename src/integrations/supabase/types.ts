@@ -209,10 +209,12 @@ export type Database = {
       students: {
         Row: {
           address: string
+          age: number | null
           class: string
           created_at: string
           date_of_birth: string
           first_name: string
+          gender: string | null
           id: string
           last_name: string
           parent_email: string
@@ -223,10 +225,12 @@ export type Database = {
         }
         Insert: {
           address: string
+          age?: number | null
           class: string
           created_at?: string
           date_of_birth: string
           first_name: string
+          gender?: string | null
           id?: string
           last_name: string
           parent_email: string
@@ -237,10 +241,12 @@ export type Database = {
         }
         Update: {
           address?: string
+          age?: number | null
           class?: string
           created_at?: string
           date_of_birth?: string
           first_name?: string
+          gender?: string | null
           id?: string
           last_name?: string
           parent_email?: string
