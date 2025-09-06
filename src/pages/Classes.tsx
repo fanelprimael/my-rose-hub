@@ -134,7 +134,11 @@ const Classes = () => {
                     <Badge className="bg-education-success/10 text-education-success hover:bg-education-success/20">
                       Active
                     </Badge>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {/* TODO: Implement view class details */}}
+                    >
                       Voir Détails
                     </Button>
                   </div>
@@ -190,10 +194,18 @@ const Classes = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {/* TODO: Implement view class details */}}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {/* TODO: Implement edit class */}}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button

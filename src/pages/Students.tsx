@@ -8,6 +8,7 @@ import { Search, Filter, Eye, Edit, Trash2, UserPlus, Download } from "lucide-re
 import { useStudentsContext } from "@/contexts/StudentsContext";
 import { AddStudentForm } from "@/components/forms/AddStudentForm";
 import { EditStudentForm } from "@/components/forms/EditStudentForm";
+import { ViewStudentModal } from "@/components/forms/ViewStudentModal";
 import { exportToPDF, exportToCSV } from "@/utils/exportUtils";
 import { useState } from "react";
 
@@ -16,6 +17,7 @@ const Students = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState<any>(null);
+  const [viewingStudent, setViewingStudent] = useState<any>(null);
 
   const filteredStudents = students.filter(student =>
     student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,6 +75,7 @@ const Students = () => {
     <Layout>
       {showAddForm && <AddStudentForm onClose={() => setShowAddForm(false)} />}
       {editingStudent && <EditStudentForm student={editingStudent} onClose={() => setEditingStudent(null)} />}
+      {viewingStudent && <ViewStudentModal student={viewingStudent} onClose={() => setViewingStudent(null)} />}
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -155,7 +158,11 @@ const Students = () => {
                       <TableCell>{getStatusBadge(student.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setViewingStudent(student)}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button 

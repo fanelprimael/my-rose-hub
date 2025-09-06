@@ -95,7 +95,7 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onClose }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date_of_birth">Date de Naissance *</Label>
                 <Input
@@ -104,6 +104,15 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({ onClose }) => {
                   value={formData.date_of_birth}
                   onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
                   required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="age">Âge</Label>
+                <Input
+                  id="age"
+                  value={formData.date_of_birth ? `${calculateAge(formData.date_of_birth)} ans` : ''}
+                  disabled
+                  placeholder="Calculé automatiquement"
                 />
               </div>
               <div className="space-y-2">

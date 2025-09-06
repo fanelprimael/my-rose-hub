@@ -6,11 +6,15 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Mail, Phone, Calendar, DollarSign, BookOpen, Users, UserPlus } from "lucide-react";
 import { useTeachersContext } from "@/contexts/TeachersContext";
 import { AddTeacherForm } from "@/components/forms/AddTeacherForm";
+import { ViewTeacherModal } from "@/components/forms/ViewTeacherModal";
+import { EditTeacherForm } from "@/components/forms/EditTeacherForm";
 import { useState } from "react";
 
 const Teachers = () => {
   const { teachers, loading } = useTeachersContext();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [viewingTeacher, setViewingTeacher] = useState<any>(null);
+  const [editingTeacher, setEditingTeacher] = useState<any>(null);
 
   if (loading) {
     return <Layout><div className="flex items-center justify-center h-64">Chargement...</div></Layout>;
@@ -27,6 +31,8 @@ const Teachers = () => {
   return (
     <Layout>
       {showAddForm && <AddTeacherForm onClose={() => setShowAddForm(false)} />}
+      {viewingTeacher && <ViewTeacherModal teacher={viewingTeacher} onClose={() => setViewingTeacher(null)} />}
+      {editingTeacher && <EditTeacherForm teacher={editingTeacher} onClose={() => setEditingTeacher(null)} />}
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -154,10 +160,18 @@ const Teachers = () => {
                 </div>
 
                 <div className="flex justify-between pt-2">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setViewingTeacher(teacher)}
+                  >
                     Voir Profil
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setEditingTeacher(teacher)}
+                  >
                     Modifier
                   </Button>
                 </div>
