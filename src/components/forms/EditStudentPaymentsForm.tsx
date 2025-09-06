@@ -110,18 +110,31 @@ export const EditStudentPaymentsForm: React.FC<EditStudentPaymentsFormProps> = (
     setLoading(true);
 
     try {
-      const paymentData = validPayments.map(payment => ({
-        student_id: studentId,
-        student_name: `${student.first_name} ${student.last_name}`,
-        class_name: student.class,
-        type: payment.type,
-        amount: parseInt(payment.amount),
-        status: payment.status,
-        date: payment.date,
-        due_date: payment.due_date || undefined
-      }));
+      const paymentData = validPayments.map(payment => {
+        const amount = parseFloat(payment.amount);
+        if (isNaN(amount) || amount <= 0) {
+          throw new Error(`Montant invalide: ${payment.amount}`);
+        }
+        
+        return {
+          student_id: studentId,
+          student_name: `${student.first_name} ${student.last_name}`,
+          class_name: student.class,
+          type: payment.type,
+          amount: Math.round(amount),
+          status: payment.status,
+          date: payment.date,
+          due_date: payment.due_date ? payment.due_date : null
+        };
+      });
 
       await updateStudentPayments(studentId, paymentData);
+      
+      toast({
+        title: "Succès",
+        description: "Paiements mis à jour avec succès"
+      });
+      
       onClose();
     } catch (error) {
       console.error('Error updating payments:', error);
