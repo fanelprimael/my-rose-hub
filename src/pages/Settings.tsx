@@ -46,7 +46,7 @@ const Settings = () => {
     address: "123 Avenue de l'Éducation, Dakar, Sénégal",
     phone: "+221 33 123 4567",
     email: "contact@laroseraie.sn",
-    school_year: currentSchoolYear?.name || "2025-2026",
+    school_year: "", // Ne sera pas utilisé, on prendra currentSchoolYear
     currency: "FCFA",
     email_notifications: true,
     maintenance_mode: false
@@ -119,7 +119,7 @@ const Settings = () => {
         address: schoolSettings.address,
         phone: schoolSettings.phone,
         email: schoolSettings.email,
-        school_year: schoolSettings.school_year,
+        school_year: currentSchoolYear?.name || "Année non définie", // Automatiquement synchronisée
         currency: schoolSettings.currency,
         email_notifications: schoolSettings.email_notifications,
         maintenance_mode: schoolSettings.maintenance_mode
@@ -312,11 +312,20 @@ const Settings = () => {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="school-year">Année Scolaire</Label>
-                      <Input 
-                        id="school-year" 
-                        value={schoolSettings.school_year}
-                        onChange={(e) => updateSchoolSetting('school_year', e.target.value)}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Input 
+                          id="school-year" 
+                          value={currentSchoolYear?.name || "Aucune année définie"}
+                          disabled
+                          className="bg-muted"
+                        />
+                        <Button variant="outline" size="sm" onClick={() => window.location.href = '/school-years'}>
+                          Modifier
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        L'année scolaire est automatiquement synchronisée avec l'année courante
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="currency">Devise</Label>
@@ -513,14 +522,37 @@ const Settings = () => {
                     Gestion des Utilisateurs
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-center py-8">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-muted-foreground mb-4">
-                    La gestion des utilisateurs sera disponible prochainement
-                  </p>
-                  <Button variant="outline" disabled>
-                    Fonctionnalité à venir
-                  </Button>
+                <CardContent className="space-y-6">
+                  <div className="text-center py-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-4">
+                      <Users className="h-8 w-8 text-blue-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">Gestion des Utilisateurs</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                      Cette fonctionnalité permettra de gérer les comptes utilisateurs, les rôles et les permissions d'accès au système.
+                    </p>
+                    <div className="space-y-3">
+                      <div className="text-sm text-muted-foreground">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span>Création et gestion des comptes</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span>Attribution des rôles et permissions</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span>Historique des connexions</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t pt-4">
+                    <Button variant="outline" disabled className="w-full">
+                      Fonctionnalité à venir
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -534,14 +566,37 @@ const Settings = () => {
                     Sauvegarde et Restauration
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-center py-8">
-                  <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-muted-foreground mb-4">
-                    Les outils de sauvegarde seront disponibles prochainement
-                  </p>
-                  <Button variant="outline" disabled>
-                    Fonctionnalité à venir
-                  </Button>
+                <CardContent className="space-y-6">
+                  <div className="text-center py-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-green-50 rounded-full mb-4">
+                      <Database className="h-8 w-8 text-green-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">Sauvegarde et Restauration</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                      Outils pour sauvegarder et restaurer les données de votre établissement scolaire en toute sécurité.
+                    </p>
+                    <div className="space-y-3">
+                      <div className="text-sm text-muted-foreground">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Sauvegarde automatique quotidienne</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Export des données en formats multiples</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Restauration sélective des données</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t pt-4">
+                    <Button variant="outline" disabled className="w-full">
+                      Fonctionnalité à venir
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
