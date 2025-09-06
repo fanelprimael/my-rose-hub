@@ -43,10 +43,21 @@ const Auth = () => {
     setIsLoading(true);
     setError(null);
 
-    const { error } = await signIn(loginForm.email, loginForm.password);
+    try {
+      const { error } = await signIn(loginForm.email, loginForm.password);
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        if (error.message?.includes('Invalid login credentials')) {
+          setError("Email ou mot de passe incorrect. Vérifiez vos informations.");
+        } else if (error.message?.includes('timeout') || error.message?.includes('504')) {
+          setError("Le serveur met du temps à répondre. Veuillez réessayer dans quelques instants.");
+        } else {
+          setError(error.message || "Erreur de connexion. Veuillez réessayer.");
+        }
+      }
+    } catch (err) {
+      console.error("Erreur lors de la connexion:", err);
+      setError("Une erreur inattendue est survenue. Veuillez réessayer.");
     }
 
     setIsLoading(false);
@@ -101,16 +112,32 @@ const Auth = () => {
       return;
     }
 
-    const { error } = await signUp(signupForm.email, signupForm.password, {
-      first_name: signupForm.firstName,
-      last_name: signupForm.lastName,
-      role: signupForm.role,
-    });
+    try {
+      const { error } = await signUp(signupForm.email, signupForm.password, {
+        first_name: signupForm.firstName,
+        last_name: signupForm.lastName,
+        role: signupForm.role,
+      });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess("Compte créé avec succès ! Vérifiez votre email pour confirmer votre inscription.");
+      if (error) {
+        // Gestion spécifique des erreurs courantes
+        if (error.message?.includes('timeout') || error.message?.includes('504')) {
+          setError("Le serveur met du temps à répondre. Veuillez réessayer dans quelques instants.");
+        } else if (error.message?.includes('User already registered')) {
+          setError("Cette adresse email est déjà utilisée. Essayez de vous connecter ou utilisez une autre adresse.");
+        } else if (error.message?.includes('Invalid email')) {
+          setError("Adresse email invalide. Vérifiez le format de votre email.");
+        } else if (error.message?.includes('Password')) {
+          setError("Problème avec le mot de passe. Assurez-vous qu'il contient au moins 6 caractères.");
+        } else {
+          setError(error.message || "Une erreur est survenue lors de la création du compte. Veuillez réessayer.");
+        }
+      } else {
+        setSuccess("Compte créé avec succès ! Vérifiez votre email pour confirmer votre inscription.");
+      }
+    } catch (err) {
+      console.error("Erreur lors de la création du compte:", err);
+      setError("Une erreur inattendue est survenue. Veuillez réessayer dans quelques instants.");
     }
 
     setIsLoading(false);
