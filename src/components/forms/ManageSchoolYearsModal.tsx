@@ -5,8 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Plus, Calendar, Archive, CheckCircle, Clock } from "lucide-react";
-import { useState } from "react";
+import { X, Plus, Calendar, Archive, CheckCircle, Clock, Zap, CalendarDays } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useSchoolYearsContext } from "@/contexts/SchoolYearsContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,6 +24,44 @@ export const ManageSchoolYearsModal = ({ isOpen, onClose }: ManageSchoolYearsMod
     start_date: '',
     end_date: ''
   });
+
+  // Fonction pour générer automatiquement les dates d'année scolaire
+  const generateSchoolYearDates = () => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // +1 car getMonth() retourne 0-11
+    
+    // Si on est avant septembre, l'année scolaire commence cette année
+    // Si on est après septembre, l'année scolaire commence l'année prochaine
+    const startYear = currentMonth < 9 ? currentYear : currentYear + 1;
+    const endYear = startYear + 1;
+    
+    const yearName = `${startYear}-${endYear}`;
+    const startDate = `${startYear}-09-15`; // 15 septembre
+    const endDate = `${endYear}-06-30`; // 30 juin
+    
+    setNewYear({
+      name: yearName,
+      start_date: startDate,
+      end_date: endDate
+    });
+  };
+
+  // Fonction pour générer l'année scolaire spécifique 2025-2026
+  const generate2025SchoolYear = () => {
+    setNewYear({
+      name: '2025-2026',
+      start_date: '2025-09-15',
+      end_date: '2026-06-30'
+    });
+  };
+
+  // Initialiser avec l'année 2025-2026 par défaut
+  useEffect(() => {
+    if (showAddForm && !newYear.name) {
+      generate2025SchoolYear();
+    }
+  }, [showAddForm]);
 
   const handleAddYear = async () => {
     if (!newYear.name || !newYear.start_date || !newYear.end_date) {
@@ -90,6 +128,35 @@ export const ManageSchoolYearsModal = ({ isOpen, onClose }: ManageSchoolYearsMod
           
           {showAddForm && (
             <CardContent>
+              {/* Boutons de génération automatique */}
+              <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Génération Automatique de Dates
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={generate2025SchoolYear}
+                    className="border-blue-300 hover:bg-blue-50 text-blue-700"
+                  >
+                    <CalendarDays className="h-4 w-4 mr-2" />
+                    Année 2025-2026 (15/09/2025)
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={generateSchoolYearDates}
+                    className="border-purple-300 hover:bg-purple-50 text-purple-700"
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Prochaine Année Automatique
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  ⏰ Les dates sont générées automatiquement selon le calendrier scolaire français
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="year-name">Nom de l'année (ex: 2025-2026)</Label>
@@ -119,10 +186,24 @@ export const ManageSchoolYearsModal = ({ isOpen, onClose }: ManageSchoolYearsMod
                   />
                 </div>
               </div>
+
+              {/* Aperçu des dates */}
+              {newYear.start_date && newYear.end_date && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-green-800">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="font-medium">Aperçu:</span>
+                  </div>
+                  <p className="text-sm text-green-700 mt-1">
+                    L'année {newYear.name} durera du {formatDate(newYear.start_date)} au {formatDate(newYear.end_date)}
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-2 mt-4">
                 <Button onClick={handleAddYear} disabled={loading}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Ajouter
+                  Ajouter l'Année
                 </Button>
                 <Button variant="outline" onClick={() => setShowAddForm(false)}>
                   Annuler
