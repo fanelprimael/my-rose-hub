@@ -12,7 +12,7 @@ interface AddGradeFormProps {
   onClose: () => void;
 }
 
-const SUBJECTS = ['ANGLAIS', 'ES', 'EST', 'EA', 'MATHÉMATIQUES', 'LECTURE', 'EXPRESSION ÉCRITE', 'POÉSIE/CHANT'];
+const SUBJECTS = ['LECTURE', 'EXPRESSION ECRITE', 'EA(DESSIN)', 'ES', 'EST', 'MATHEMATIQUES', 'POESIE/CHANT', 'ANGLAIS'];
 const EVALUATIONS = ['Evaluation 1', 'Evaluation 2', 'Evaluation 3', 'Evaluation 4', 'Evaluation 5'];
 
 export const AddGradeForm: React.FC<AddGradeFormProps> = ({ onClose }) => {

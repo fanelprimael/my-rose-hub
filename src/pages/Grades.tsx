@@ -19,7 +19,7 @@ const Grades = () => {
   const [showMultipleGradesForm, setShowMultipleGradesForm] = useState(false);
 
   const classes = ['Maternelle 1', 'Maternelle 2', 'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
-  const subjects = ['ANGLAIS', 'ES', 'EST', 'EA', 'MATHÉMATIQUES', 'LECTURE', 'EXPRESSION ÉCRITE', 'POÉSIE/CHANT'];
+  const subjects = ['LECTURE', 'EXPRESSION ECRITE', 'EA(DESSIN)', 'ES', 'EST', 'MATHEMATIQUES', 'POESIE/CHANT', 'ANGLAIS'];
   const evaluations = ['Evaluation 1', 'Evaluation 2', 'Evaluation 3', 'Evaluation 4', 'Evaluation 5'];
 
   // Filter grades based on selections
