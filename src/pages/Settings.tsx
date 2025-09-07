@@ -9,6 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useSchoolYearsContext } from "@/contexts/SchoolYearsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import UserManagementModal from "@/components/forms/UserManagementModal";
+import { DataSyncPanel } from "@/components/sync/DataSyncPanel";
 import { 
   Settings as SettingsIcon, 
   School, 
@@ -36,8 +39,10 @@ interface SchoolSettings {
 const Settings = () => {
   const { toast } = useToast();
   const { currentSchoolYear } = useSchoolYearsContext();
+  const { isDirection } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('school');
+  const [showUserManagement, setShowUserManagement] = useState(false);
   
   // États pour les paramètres
   const [schoolSettings, setSchoolSettings] = useState<SchoolSettings>({
@@ -523,86 +528,52 @@ const Settings = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-4">
-                      <Users className="h-8 w-8 text-blue-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">Gestion des Utilisateurs</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      Cette fonctionnalité permettra de gérer les comptes utilisateurs, les rôles et les permissions d'accès au système.
-                    </p>
-                    <div className="space-y-3">
-                      <div className="text-sm text-muted-foreground">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span>Création et gestion des comptes</span>
+                  {isDirection ? (
+                    <div>
+                      <div className="text-center py-4">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+                          <Users className="h-8 w-8 text-primary" />
                         </div>
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span>Attribution des rôles et permissions</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span>Historique des connexions</span>
-                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Comptes Utilisateurs</h3>
+                        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                          Gérez les comptes d'accès à l'application. Créez des comptes pour la direction et le secrétariat.
+                        </p>
                       </div>
+                      <Button 
+                        onClick={() => setShowUserManagement(true)}
+                        className="w-full"
+                      >
+                        <Users className="mr-2 h-4 w-4" />
+                        Gérer les Utilisateurs
+                      </Button>
                     </div>
-                  </div>
-                  <div className="border-t pt-4">
-                    <Button variant="outline" disabled className="w-full">
-                      Fonctionnalité à venir
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-50 rounded-full mb-4">
+                        <Shield className="h-8 w-8 text-orange-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2">Accès Restreint</h3>
+                      <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                        Seule la direction peut gérer les comptes utilisateurs. Contactez un administrateur pour toute modification.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
 
             {/* Backup Tab */}
             {activeTab === 'backup' && (
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5 text-primary" />
-                    Sauvegarde et Restauration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-green-50 rounded-full mb-4">
-                      <Database className="h-8 w-8 text-green-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">Sauvegarde et Restauration</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      Outils pour sauvegarder et restaurer les données de votre établissement scolaire en toute sécurité.
-                    </p>
-                    <div className="space-y-3">
-                      <div className="text-sm text-muted-foreground">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span>Sauvegarde automatique quotidienne</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span>Export des données en formats multiples</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span>Restauration sélective des données</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="border-t pt-4">
-                    <Button variant="outline" disabled className="w-full">
-                      Fonctionnalité à venir
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <DataSyncPanel />
             )}
           </div>
         </div>
       </div>
+
+      <UserManagementModal 
+        open={showUserManagement}
+        onOpenChange={setShowUserManagement}
+      />
     </Layout>
   );
 };

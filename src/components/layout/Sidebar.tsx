@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Home,
   Users,
@@ -11,9 +12,12 @@ import {
   Settings,
   Menu,
   X,
-  Calendar
+  Calendar,
+  LogOut,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 
 const navigation = [
@@ -22,15 +26,24 @@ const navigation = [
   { name: "Classes", href: "/classes", icon: School },
   { name: "Enseignants", href: "/teachers", icon: GraduationCap },
   { name: "Notes", href: "/grades", icon: BookOpen },
-  { name: "Finances", href: "/finances", icon: CreditCard },
+  { name: "Finances", href: "/finances", icon: CreditCard, roles: ['direction'] },
   { name: "Rapports", href: "/reports", icon: FileText },
-  { name: "Années Scolaires", href: "/school-years", icon: Calendar },
+  { name: "Années Scolaires", href: "/school-years", icon: Calendar, roles: ['direction'] },
   { name: "Paramètres", href: "/settings", icon: Settings },
 ];
 
 export const Sidebar = () => {
   const location = useLocation();
+  const { profile, signOut, isDirection } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const filteredNavigation = navigation.filter(item => 
+    !item.roles || item.roles.includes(profile?.role || 'secretariat')
+  );
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <>
@@ -63,7 +76,7 @@ export const Sidebar = () => {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
               
@@ -87,8 +100,36 @@ export const Sidebar = () => {
             })}
           </nav>
 
-          {/* Footer */}
+          {/* User Info & Logout */}
           <div className="p-4 border-t border-sidebar-border">
+            <div className="flex items-center space-x-3 mb-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>
+                  {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  {profile?.first_name} {profile?.last_name}
+                </p>
+                <p className="text-xs text-sidebar-foreground/70 capitalize">
+                  {profile?.role}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="w-full justify-start"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Déconnexion
+            </Button>
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 pb-4">
             <div className="text-xs text-sidebar-foreground/50 text-center">
               © 2024 La Roseraie
             </div>
