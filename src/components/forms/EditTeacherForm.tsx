@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTeachersContext } from "@/contexts/TeachersContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,7 +17,6 @@ interface Teacher {
   classes: string[];
   hire_date?: string;
   status: string;
-  salary: number;
 }
 
 interface EditTeacherFormProps {
@@ -28,23 +26,18 @@ interface EditTeacherFormProps {
 
 export const EditTeacherForm: React.FC<EditTeacherFormProps> = ({ teacher, onClose }) => {
   const { updateTeacher } = useTeachersContext();
-  const { profile } = useAuth();
   const [formData, setFormData] = useState({
     first_name: teacher.first_name,
     last_name: teacher.last_name,
     email: teacher.email,
     phone: teacher.phone,
     hire_date: teacher.hire_date || '',
-    status: teacher.status,
-    salary: teacher.salary || 0
+    status: teacher.status
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (name: string, value: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: name === 'salary' ? parseInt(value) || 0 : value 
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,19 +123,6 @@ export const EditTeacherForm: React.FC<EditTeacherFormProps> = ({ teacher, onClo
                 onChange={(e) => handleInputChange('hire_date', e.target.value)}
               />
             </div>
-
-            {profile?.role === 'direction' && (
-              <div className="space-y-2">
-                <Label htmlFor="salary">Salaire (FCFA)</Label>
-                <Input
-                  id="salary"
-                  type="number"
-                  value={formData.salary}
-                  onChange={(e) => handleInputChange('salary', e.target.value)}
-                  min="0"
-                />
-              </div>
-            )}
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button type="button" variant="outline" onClick={onClose}>

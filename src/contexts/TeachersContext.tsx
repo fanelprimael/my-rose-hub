@@ -12,7 +12,6 @@ export interface Teacher {
   classes: string[];
   status: string;
   hire_date?: string;
-  salary: number;
   school_year_id: string;
   created_at: string;
   updated_at: string;

@@ -11,7 +11,42 @@ export interface FinanceRecord {
 }
 
 export const useFinances = () => {
-  const [records] = useState<FinanceRecord[]>([]);
+  const [records] = useState<FinanceRecord[]>([
+    {
+      id: '1',
+      type: 'income',
+      amount: 15000,
+      description: 'Frais de scolarité - Amirah Diallo',
+      category: 'Scolarité',
+      date: '2024-01-15',
+      studentId: '1',
+    },
+    {
+      id: '2',
+      type: 'income',
+      amount: 15000,
+      description: 'Frais de scolarité - Ibrahim Ba',
+      category: 'Scolarité',
+      date: '2024-01-16',
+      studentId: '2',
+    },
+    {
+      id: '3',
+      type: 'expense',
+      amount: 50000,
+      description: 'Fournitures scolaires',
+      category: 'Matériel',
+      date: '2024-01-10',
+    },
+    {
+      id: '4',
+      type: 'expense',
+      amount: 75000,
+      description: 'Salaire enseignant',
+      category: 'Salaires',
+      date: '2024-01-01',
+    },
+  ]);
 
   const stats = useMemo(() => {
     const currentMonth = new Date().getMonth();

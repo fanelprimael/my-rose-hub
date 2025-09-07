@@ -37,7 +37,7 @@ export const ClassesProvider: React.FC<{ children: ReactNode }> = ({ children })
       const { data, error } = await supabase
         .from('classes')
         .select('*')
-        .order('name', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching classes:', error);
@@ -49,18 +49,7 @@ export const ClassesProvider: React.FC<{ children: ReactNode }> = ({ children })
         return;
       }
 
-      // Ordre personnalisé pour les classes
-      const classOrder = ['Petite Section', 'Moyenne Section', 'Grande Section', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
-      const sortedClasses = (data || []).sort((a, b) => {
-        const indexA = classOrder.indexOf(a.name);
-        const indexB = classOrder.indexOf(b.name);
-        if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name);
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-      });
-
-      setClasses(sortedClasses);
+      setClasses(data || []);
     } catch (error) {
       console.error('Error:', error);
       toast({

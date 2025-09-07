@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTeachersContext } from "@/contexts/TeachersContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { X } from "lucide-react";
 
 interface AddTeacherFormProps {
@@ -18,7 +17,6 @@ const CLASSES = ['Maternelle 1', 'Maternelle 2', 'CI', 'CP', 'CE1', 'CE2', 'CM1'
 
 export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onClose }) => {
   const { addTeacher } = useTeachersContext();
-  const { profile } = useAuth();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -27,16 +25,12 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onClose }) => {
     subjects: [] as string[],
     classes: [] as string[],
     status: 'active',
-    hire_date: '',
-    salary: 0
+    hire_date: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (name: string, value: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: name === 'salary' ? parseInt(value) || 0 : value 
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleArrayChange = (name: 'subjects' | 'classes', value: string, checked: boolean) => {
@@ -125,19 +119,6 @@ export const AddTeacherForm: React.FC<AddTeacherFormProps> = ({ onClose }) => {
                 onChange={(e) => handleInputChange('hire_date', e.target.value)}
               />
             </div>
-
-            {profile?.role === 'direction' && (
-              <div className="space-y-2">
-                <Label htmlFor="salary">Salaire (FCFA)</Label>
-                <Input
-                  id="salary"
-                  type="number"
-                  value={formData.salary}
-                  onChange={(e) => handleInputChange('salary', e.target.value)}
-                  min="0"
-                />
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label>Classes Assignées</Label>

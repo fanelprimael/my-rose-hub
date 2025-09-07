@@ -197,42 +197,6 @@ export type Database = {
           },
         ]
       }
-      profiles: {
-        Row: {
-          created_at: string
-          email: string
-          first_name: string
-          id: string
-          is_active: boolean
-          last_name: string
-          role: Database["public"]["Enums"]["app_role"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          first_name: string
-          id?: string
-          is_active?: boolean
-          last_name: string
-          role?: Database["public"]["Enums"]["app_role"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          first_name?: string
-          id?: string
-          is_active?: boolean
-          last_name?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       school_settings: {
         Row: {
           address: string | null
@@ -410,7 +374,6 @@ export type Database = {
           id: string
           last_name: string
           phone: string
-          salary: number | null
           school_year_id: string
           status: string
           subjects: string[]
@@ -425,7 +388,6 @@ export type Database = {
           id?: string
           last_name: string
           phone: string
-          salary?: number | null
           school_year_id: string
           status?: string
           subjects?: string[]
@@ -440,7 +402,6 @@ export type Database = {
           id?: string
           last_name?: string
           phone?: string
-          salary?: number | null
           school_year_id?: string
           status?: string
           subjects?: string[]
@@ -492,13 +453,9 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_user_role: {
-        Args: { user_id: string }
-        Returns: Database["public"]["Enums"]["app_role"]
-      }
     }
     Enums: {
-      app_role: "direction" | "secretariat"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -625,8 +582,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["direction", "secretariat"],
-    },
+    Enums: {},
   },
 } as const
