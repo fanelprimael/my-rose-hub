@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Mail, Phone, Calendar, DollarSign, BookOpen, Users, UserPlus, Trash2 } from "lucide-react";
 import { useTeachersContext } from "@/contexts/TeachersContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { AddTeacherForm } from "@/components/forms/AddTeacherForm";
 import { ViewTeacherModal } from "@/components/forms/ViewTeacherModal";
 import { EditTeacherForm } from "@/components/forms/EditTeacherForm";
@@ -12,6 +13,8 @@ import { useState } from "react";
 
 const Teachers = () => {
   const { teachers, loading, deleteTeacher } = useTeachersContext();
+  const { profile } = useAuth();
+  const isDirection = profile?.role === 'direction';
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewingTeacher, setViewingTeacher] = useState<any>(null);
   const [editingTeacher, setEditingTeacher] = useState<any>(null);
@@ -87,7 +90,9 @@ const Teachers = () => {
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-8 w-8 text-education-success" />
                 <div>
-                  <p className="text-2xl font-bold">0 FCFA</p>
+                  <p className="text-2xl font-bold">
+                    {isDirection ? formatSalary(teachers.reduce((sum, teacher) => sum + (teacher.salary || 0), 0)) : '***'}
+                  </p>
                   <p className="text-sm text-muted-foreground">Masse Salariale</p>
                 </div>
               </div>
@@ -97,7 +102,14 @@ const Teachers = () => {
 
         {/* Teachers Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {teachers.map((teacher) => (
+          {teachers.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-muted-foreground mb-2">Aucun enseignant</h3>
+              <p className="text-muted-foreground">Ajoutez votre premier enseignant pour commencer.</p>
+            </div>
+          ) : (
+            teachers.map((teacher) => (
             <Card key={teacher.id} className="shadow-soft hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-center space-x-4">
@@ -137,7 +149,7 @@ const Teachers = () => {
                   </div>
                   <div className="flex items-center space-x-2 text-muted-foreground">
                     <DollarSign className="h-4 w-4" />
-                    <span>0 FCFA</span>
+                    <span>{isDirection ? formatSalary(teacher.salary || 0) : '***'}</span>
                   </div>
                 </div>
 
@@ -193,7 +205,8 @@ const Teachers = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          ))
+          )}
         </div>
       </div>
     </Layout>

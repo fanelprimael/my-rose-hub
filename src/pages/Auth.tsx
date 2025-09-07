@@ -34,10 +34,10 @@ const Auth = () => {
     role: "secretariat" as UserRole,
   });
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated - prevent screen jumps
   useEffect(() => {
-    if (user && !loading) {
-      navigate("/", { replace: true });
+    if (!loading && user) {
+      setTimeout(() => navigate("/", { replace: true }), 0);
     }
   }, [user, loading, navigate]);
 

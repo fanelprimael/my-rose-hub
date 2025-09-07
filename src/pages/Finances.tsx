@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DollarSign, CreditCard, TrendingUp, AlertCircle, Plus, Search, Filter, Eye, Edit, Trash2, Download } from "lucide-react";
 import { usePaymentsContext } from "@/contexts/PaymentsContext";
 import { useStudentsContext } from "@/contexts/StudentsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { AddPaymentForm } from "@/components/forms/AddPaymentForm";
 import { ViewStudentPaymentsModal } from "@/components/forms/ViewStudentPaymentsModal";
 import { EditStudentPaymentsForm } from "@/components/forms/EditStudentPaymentsForm";
@@ -16,6 +17,8 @@ import { useState } from "react";
 const Finances = () => {
   const { payments, loading } = usePaymentsContext();
   const { students } = useStudentsContext();
+  const { profile } = useAuth();
+  const isDirection = profile?.role === 'direction';
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -112,55 +115,83 @@ const Finances = () => {
         </div>
 
         {/* Statistics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="shadow-soft">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <DollarSign className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="text-2xl font-bold">{totalAmount.toLocaleString()} FCFA</p>
-                  <p className="text-sm text-muted-foreground">Revenus Total</p>
+        {isDirection ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="text-2xl font-bold">{totalAmount.toLocaleString()} FCFA</p>
+                    <p className="text-sm text-muted-foreground">Revenus Total</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-soft">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <CreditCard className="h-8 w-8 text-education-success" />
-                <div>
-                  <p className="text-2xl font-bold">{totalPaid.toLocaleString()} FCFA</p>
-                  <p className="text-sm text-muted-foreground">Encaissé</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <CreditCard className="h-8 w-8 text-education-success" />
+                  <div>
+                    <p className="text-2xl font-bold">{totalPaid.toLocaleString()} FCFA</p>
+                    <p className="text-sm text-muted-foreground">Encaissé</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="shadow-soft">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="h-8 w-8 text-education-warning" />
-                <div>
-                  <p className="text-2xl font-bold">{totalPending.toLocaleString()} FCFA</p>
-                  <p className="text-sm text-muted-foreground">En Attente</p>
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="h-8 w-8 text-education-warning" />
+                  <div>
+                    <p className="text-2xl font-bold">{totalPending.toLocaleString()} FCFA</p>
+                    <p className="text-sm text-muted-foreground">En Attente</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="shadow-soft">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-8 w-8 text-education-accent" />
-                <div>
-                  <p className="text-2xl font-bold">{paidPayments}</p>
-                  <p className="text-sm text-muted-foreground">Paiements Réalisés</p>
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="h-8 w-8 text-education-accent" />
+                  <div>
+                    <p className="text-2xl font-bold">{paidPayments}</p>
+                    <p className="text-sm text-muted-foreground">Paiements Réalisés</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <CreditCard className="h-8 w-8 text-education-success" />
+                  <div>
+                    <p className="text-2xl font-bold">{paidPayments}</p>
+                    <p className="text-sm text-muted-foreground">Paiements Réalisés</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="h-8 w-8 text-education-warning" />
+                  <div>
+                    <p className="text-2xl font-bold">{payments.filter(p => p.status === 'En attente').length}</p>
+                    <p className="text-sm text-muted-foreground">Paiements en Attente</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Class Selector and Search/Filter */}
         <div className="space-y-4">
