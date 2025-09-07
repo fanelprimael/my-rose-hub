@@ -13,11 +13,11 @@ ALTER TABLE teachers ADD COLUMN salary INTEGER DEFAULT 0;
 
 -- Créer les classes ordonnées de la maternelle au CM2
 INSERT INTO classes (name, level, capacity, student_count, teacher, school_year_id) VALUES
-('Petite Section', 'Maternelle', 25, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
-('Moyenne Section', 'Maternelle', 25, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
-('Grande Section', 'Maternelle', 25, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
+('Maternelle 1', 'Maternelle', 25, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
+('Maternelle 2', 'Maternelle', 25, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
+('CI', 'Primaire', 25, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
 ('CP', 'Primaire', 30, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
 ('CE1', 'Primaire', 30, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
 ('CE2', 'Primaire', 30, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
 ('CM1', 'Primaire', 30, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1)),
-('CM2', 'Primaire', 30, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1));
+('CM2', 'Primaire', 30, 0, 'Enseignant non assigné', (SELECT id FROM school_years WHERE is_current = true LIMIT 1;
