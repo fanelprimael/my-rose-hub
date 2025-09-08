@@ -5,21 +5,24 @@ import { ClassesProvider } from "./ClassesContext";
 import { PaymentsProvider } from "./PaymentsContext";
 import { GradesProvider } from "./GradesContext";
 import { SchoolYearsProvider } from "./SchoolYearsContext";
+import { BackupProvider } from "./BackupContext";
 
 export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <SchoolYearsProvider>
-      <StudentsProvider>
-        <TeachersProvider>
-          <ClassesProvider>
-            <GradesProvider>
-              <PaymentsProvider>
-                {children}
-              </PaymentsProvider>
-            </GradesProvider>
-          </ClassesProvider>
-        </TeachersProvider>
-      </StudentsProvider>
-    </SchoolYearsProvider>
+    <BackupProvider>
+      <SchoolYearsProvider>
+        <StudentsProvider>
+          <TeachersProvider>
+            <ClassesProvider>
+              <GradesProvider>
+                <PaymentsProvider>
+                  {children}
+                </PaymentsProvider>
+              </GradesProvider>
+            </ClassesProvider>
+          </TeachersProvider>
+        </StudentsProvider>
+      </SchoolYearsProvider>
+    </BackupProvider>
   );
 };
