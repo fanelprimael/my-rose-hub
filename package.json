@@ -9,6 +9,14 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
+    "scripts": {
+    "electron": "electron public/electron.js",
+    "electron:dev": "concurrently \"npm run dev\" \"node scripts/dev-electron.js\"",
+    "electron:build": "npm run build && node scripts/build-electron.js",
+    "electron:pack": "npm run build && electron-builder",
+    "electron:dist": "npm run build && electron-builder --publish=never"
+  },
+  "main": "public/electron.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
