@@ -1,4 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { ElectronAPI } from '@/types/electron';
+
+// Étendre l'interface Window pour inclure electronAPI
+declare global {
+  interface Window {
+    electronAPI?: ElectronAPI;
+  }
+}
 
 export interface BackupData {
   timestamp: string;
@@ -21,7 +29,7 @@ class BackupService {
 
   // Vérifier si on est dans Electron
   private isElectron(): boolean {
-    return typeof window !== 'undefined' && typeof (window as any).require !== 'undefined';
+    return typeof window !== 'undefined' && !!window.electronAPI;
   }
 
   // Exporter toutes les données depuis Supabase
@@ -97,10 +105,9 @@ class BackupService {
     try {
       const data = await this.exportAllData();
       
-      if (this.isElectron()) {
-        // Sauvegarde Electron
-        const { ipcRenderer } = window.require('electron');
-        await ipcRenderer.invoke('auto-save', data);
+      if (this.isElectron() && window.electronAPI) {
+        // Sauvegarde Electron avec API sécurisée
+        await window.electronAPI.autoSave(data);
       } else {
         // Sauvegarde dans localStorage pour le web
         localStorage.setItem('roseraie-auto-backup', JSON.stringify(data));
@@ -113,10 +120,9 @@ class BackupService {
   // Charger la sauvegarde automatique
   async loadAutoSave(): Promise<BackupData | null> {
     try {
-      if (this.isElectron()) {
-        // Charger depuis Electron
-        const { ipcRenderer } = window.require('electron');
-        const result = await ipcRenderer.invoke('load-auto-save');
+      if (this.isElectron() && window.electronAPI) {
+        // Charger depuis Electron avec API sécurisée
+        const result = await window.electronAPI.loadAutoSave();
         
         if (result.success) {
           return result.data;
@@ -142,10 +148,9 @@ class BackupService {
     try {
       const data = await this.exportAllData();
       
-      if (this.isElectron()) {
-        // Sauvegarde avec dialogue Electron
-        const { ipcRenderer } = window.require('electron');
-        const result = await ipcRenderer.invoke('save-backup', data);
+      if (this.isElectron() && window.electronAPI) {
+        // Sauvegarde avec dialogue Electron API sécurisée
+        const result = await window.electronAPI.saveBackup(data);
         return result.success;
       } else {
         // Téléchargement pour le web
@@ -171,10 +176,9 @@ class BackupService {
   // Charger une sauvegarde manuelle
   async loadBackup(): Promise<BackupData | null> {
     try {
-      if (this.isElectron()) {
-        // Charger avec dialogue Electron
-        const { ipcRenderer } = window.require('electron');
-        const result = await ipcRenderer.invoke('load-backup');
+      if (this.isElectron() && window.electronAPI) {
+        // Charger avec dialogue Electron API sécurisée
+        const result = await window.electronAPI.loadBackup();
         
         if (result.success) {
           return result.data;

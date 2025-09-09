@@ -12,25 +12,16 @@ Ajoutez ces scripts dans votre `package.json` :
 {
   "scripts": {
     "electron": "electron public/electron.js",
-    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:8080 && electron public/electron.js\"",
+    "electron:dev": "concurrently \"npm run dev\" \"node scripts/dev-electron.js\"",
+    "electron:build": "npm run build && node scripts/build-electron.js",
     "electron:pack": "npm run build && electron-builder",
     "electron:dist": "npm run build && electron-builder --publish=never"
   },
-  "main": "public/electron.js",
-  "electronBuilder": {
-    "appId": "com.laroseraie.app",
-    "productName": "École La Roseraie",
-    "directories": {
-      "output": "dist-electron"
-    },
-    "files": [
-      "dist/**/*",
-      "public/electron.js",
-      "node_modules/**/*"
-    ]
-  }
+  "main": "public/electron.js"
 }
 ```
+
+**Configuration automatique:** L'application utilise le fichier `electron-builder.yml` pour la configuration.
 
 ## Usage
 
@@ -42,12 +33,20 @@ npm run electron:dev
 
 ### Production
 ```bash
-# Construire l'application
+# Construire l'application web
 npm run build
 
-# Créer l'exécutable Electron
+# Construire l'exécutable Electron (avec vérifications)
+npm run electron:build
+
+# Alternative: Construction directe
 npm run electron:pack
 ```
+
+### Étapes pour créer l'exécutable Windows
+1. `npm run build` - Construit l'app web dans /dist
+2. `npm run electron:build` - Vérifie et construit l'exécutable
+3. L'exécutable .exe se trouve dans `/dist-electron/`
 
 ## Fonctionnalités
 

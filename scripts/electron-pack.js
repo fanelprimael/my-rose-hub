@@ -10,9 +10,16 @@ const opts = {
       output: 'dist-electron'
     },
     files: [
-      'build/**/*',
+      'dist/**/*',
       'public/electron.js',
-      'node_modules/**/*'
+      'package.json'
+    ],
+    extraResources: [
+      {
+        from: 'dist',
+        to: 'app/dist',
+        filter: ['**/*']
+      }
     ],
     mac: {
       category: 'public.app-category.education',

@@ -11,20 +11,27 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true,
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: true,
     },
     icon: path.join(__dirname, 'favicon.ico'),
-    title: 'École La Roseraie - Gestion Scolaire'
+    title: 'École La Roseraie - Gestion Scolaire',
+    show: false
   });
 
   // Charger l'application
   const startUrl = isDev 
     ? 'http://localhost:8080' 
-    : `file://${path.join(__dirname, '../dist/index.html')}`;
+    : `file://${path.join(__dirname, '../app/dist/index.html')}`;
   
   mainWindow.loadURL(startUrl);
+  
+  // Montrer la fenêtre quand elle est prête
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
 
   // Ouvrir les DevTools en mode développement
   if (isDev) {
