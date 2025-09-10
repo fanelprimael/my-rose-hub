@@ -11,9 +11,12 @@ import {
   Settings,
   Menu,
   X,
-  Calendar
+  Calendar,
+  LogOut,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
 const navigation = [
@@ -31,6 +34,12 @@ const navigation = [
 export const Sidebar = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { profile, userRole, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -88,7 +97,33 @@ export const Sidebar = () => {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-sidebar-border">
+          <div className="p-4 border-t border-sidebar-border space-y-3">
+            {/* User Profile */}
+            <div className="flex items-center space-x-3 p-2 rounded-lg bg-sidebar-accent/50">
+              <div className="flex-shrink-0">
+                <User className="h-8 w-8 text-sidebar-foreground/70 bg-sidebar-accent rounded-full p-1" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-sidebar-foreground truncate">
+                  {profile ? `${profile.first_name} ${profile.last_name}` : 'Utilisateur'}
+                </div>
+                <div className="text-xs text-sidebar-foreground/70 capitalize">
+                  {userRole || 'Utilisateur'}
+                </div>
+              </div>
+            </div>
+            
+            {/* Logout Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="w-full justify-start text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Déconnexion
+            </Button>
+            
             <div className="text-xs text-sidebar-foreground/50 text-center">
               © 2024 La Roseraie
             </div>

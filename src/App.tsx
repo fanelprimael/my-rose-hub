@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProviders } from "@/contexts/AppProviders";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Students from "./pages/Students";
 import Classes from "./pages/Classes";
@@ -25,15 +27,52 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/students" element={<Students />} />
-            <Route path="/classes" element={<Classes />} />
-            <Route path="/teachers" element={<Teachers />} />
-            <Route path="/grades" element={<Grades />} />
-            <Route path="/finances" element={<Finances />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/school-years" element={<SchoolYearManagement />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/students" element={
+              <ProtectedRoute>
+                <Students />
+              </ProtectedRoute>
+            } />
+            <Route path="/classes" element={
+              <ProtectedRoute>
+                <Classes />
+              </ProtectedRoute>
+            } />
+            <Route path="/teachers" element={
+              <ProtectedRoute>
+                <Teachers />
+              </ProtectedRoute>
+            } />
+            <Route path="/grades" element={
+              <ProtectedRoute>
+                <Grades />
+              </ProtectedRoute>
+            } />
+            <Route path="/finances" element={
+              <ProtectedRoute>
+                <Finances />
+              </ProtectedRoute>
+            } />
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            } />
+            <Route path="/school-years" element={
+              <ProtectedRoute requiredRole="admin">
+                <SchoolYearManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute requiredRole="admin">
+                <Settings />
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
