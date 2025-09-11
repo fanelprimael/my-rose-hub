@@ -78,11 +78,6 @@ const Auth = () => {
               {loading ? 'Connexion...' : 'Se connecter'}
             </Button>
           </form>
-          <div className="mt-6 p-3 bg-muted rounded-md">
-            <p className="text-xs text-muted-foreground text-center">
-              Mot de passe par défaut: <span className="font-mono">roseraie2024</span>
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>

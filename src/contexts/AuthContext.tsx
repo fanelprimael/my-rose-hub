@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   // Mot de passe fixe
-  const FIXED_PASSWORD = 'roseraie2024';
+  const FIXED_PASSWORD = 'LaRoseraie2025!Admin';
 
   useEffect(() => {
     // Vérifier si l'utilisateur est déjà connecté
