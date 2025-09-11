@@ -34,7 +34,7 @@ const navigation = [
 export const Sidebar = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { profile, userRole, signOut } = useAuth();
+  const { user, userRole, signOut } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -105,7 +105,7 @@ export const Sidebar = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-sidebar-foreground truncate">
-                  {profile ? `${profile.first_name} ${profile.last_name}` : 'Utilisateur'}
+                  {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Administrateur'}
                 </div>
                 <div className="text-xs text-sidebar-foreground/70 capitalize">
                   {userRole || 'Utilisateur'}

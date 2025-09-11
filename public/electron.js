@@ -24,7 +24,7 @@ function createWindow() {
   // Charger l'application
   const startUrl = isDev 
     ? 'http://localhost:8080' 
-    : `file://${path.join(__dirname, '../app/dist/index.html')}`;
+    : `file://${path.join(__dirname, '../dist/index.html')}`;
   
   mainWindow.loadURL(startUrl);
   
